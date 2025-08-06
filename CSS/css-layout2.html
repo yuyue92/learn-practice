@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS经典界面布局</title>
+    <style>
+        *{padding: 0; margin: 0;}
+        .container {
+            display: grid;
+            grid-template-areas: 'header header header'
+            'left main right'
+            'footer footer footer';
+            grid-template-columns: 200px 1fr 200px;
+            grid-template-rows: 60px 1fr 60px;
+            height: 100vh;
+        }
+        header { grid-area: header; background: #2196f3; }
+        .left { grid-area: left; background: #4caf50; }
+        main { grid-area: main; background: #f2f2f2; }
+        .right { grid-area: right; background: #ff9800; }
+        footer { grid-area: footer; background: #607d8b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>Header</header>
+        <aside class="left">Left</aside>
+        <main>Main</main>
+        <aside class="right">Right</aside>
+        <footer>Footer</footer>
+    </div>
+
+
+
+    
+</body>
+</html>
