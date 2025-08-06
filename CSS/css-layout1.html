@@ -14,16 +14,37 @@
         }
         .flex-container .item {
             width: 110px; height: 110px;
+            background: #4caf50; text-align: center;
+        }
+        .grid-container {
+            display: grid; gap: 11px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            border: 1px solid #ccc; border-radius: 11px; padding: 11px; margin: 11px;
+        }
+        .grid-container .item {
+            background: #ff9800; text-align: center; padding: 22px;
+        }
+        .grid-container .item:nth-child(2n+1) {
             background: #4caf50;
         }
     </style>
 </head>
 <body>
+    <h3>弹性布局，水平居中+等间距布局</h3>
     <div class="flex-container">
         <div class="item">1</div>
         <div class="item">2</div>
         <div class="item">3</div>
     </div>
+    <h3>Grid 网格布局</h3>
+    <div class="grid-container">
+        <div class="item">1</div>
+        <div class="item">2</div>
+        <div class="item">3</div>
+        <div class="item">4</div>
+        <div class="item">5</div>
+    </div>
+
 
     
 </body>
