@@ -27,7 +27,7 @@ fetch('https://jsonplaceholder.typicode.com/posts', {
   .then(data => console.log(data));
 ```
 
-2、XMLHttpRequest (XHR)：较旧的请求方式，但依然可用（比如需要兼容旧浏览器）。
+2、XMLHttpRequest (XHR)：较旧的请求方式，但依然可用（比如需要兼容旧浏览器）。优点：老浏览器兼容好,缺点：语法冗长，不如 fetch 简洁;
 ```
 const xhr = new XMLHttpRequest();
 xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts/1');
@@ -42,4 +42,23 @@ xhr.onerror = function () {
   console.error('网络错误');
 };
 xhr.send();
+```
+
+3、axios（第三方库）基于 Promise，功能更丰富（浏览器 + Node.js 通用）；
+```
+import axios from 'axios';
+
+// GET
+axios.get('https://jsonplaceholder.typicode.com/posts/1')
+  .then(res => console.log(res.data))
+  .catch(err => console.error(err));
+
+// POST
+axios.post('https://jsonplaceholder.typicode.com/posts', {
+  title: 'Hello',
+  body: 'Axios 示例',
+  userId: 1
+})
+  .then(res => console.log(res.data))
+  .catch(err => console.error(err));
 ```
