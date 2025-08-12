@@ -44,7 +44,7 @@ xhr.onerror = function () {
 xhr.send();
 ```
 
-3、axios（第三方库）基于 Promise，功能更丰富（浏览器 + Node.js 通用）；
+3、axios（第三方库）基于 Promise，功能更丰富（浏览器 + Node.js 通用）；特点：自动 JSON 解析；内置超时、请求取消、拦截器等功能；跨平台（浏览器 & Node）；
 ```
 import axios from 'axios';
 
