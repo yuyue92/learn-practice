@@ -1,6 +1,6 @@
 **前端请求API简介**
 
-1、fetch API：浏览器原生支持的现代请求方式，返回promise；优点时原生支持、语法简洁、支持 async/await；缺点：不自动处理错误状态，需要手动判断 response.ok；
+1、fetch API：浏览器原生支持的现代请求方式，返回promise；优点：原生支持、语法简洁、支持 async/await；缺点：不自动处理错误状态，需要手动判断 response.ok；
 ```
 // GET 请求
 fetch('https://jsonplaceholder.typicode.com/posts/1')
@@ -25,4 +25,21 @@ fetch('https://jsonplaceholder.typicode.com/posts', {
 })
   .then(res => res.json())
   .then(data => console.log(data));
+```
+
+2、XMLHttpRequest (XHR)：较旧的请求方式，但依然可用（比如需要兼容旧浏览器）。
+```
+const xhr = new XMLHttpRequest();
+xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts/1');
+xhr.onload = function () {
+  if (xhr.status === 200) {
+    console.log(JSON.parse(xhr.responseText));
+  } else {
+    console.error('请求失败:', xhr.status);
+  }
+};
+xhr.onerror = function () {
+  console.error('网络错误');
+};
+xhr.send();
 ```
