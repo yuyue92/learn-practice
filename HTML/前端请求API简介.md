@@ -1,6 +1,6 @@
 **前端请求API简介**
 
-1、fetch API：浏览器原生支持的现代请求方式，返回promise；
+1、fetch API：浏览器原生支持的现代请求方式，返回promise；优点时原生支持、语法简洁、支持 async/await；缺点：不自动处理错误状态，需要手动判断 response.ok；
 ```
 // GET 请求
 fetch('https://jsonplaceholder.typicode.com/posts/1')
