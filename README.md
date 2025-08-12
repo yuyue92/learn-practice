@@ -1,1 +1,1 @@
-学习记录，HTML，CSS，react，
+学习记录，HTML，CSS，JavaScript，react等等
