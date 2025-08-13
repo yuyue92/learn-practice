@@ -12,3 +12,18 @@ HTML5引入了一种新的属性格式：data-<name>="value"，可以在HTML5元
 - 作为 JS 逻辑的参数（比如按钮绑定的动作类型）
 - 组件/插件初始化参数（比如轮播图的速度、颜色等）
 - 无侵入的标记（不需要加类名或 ID）
+
+示例：
+```
+<button id="buy-btn" data-product-id="123" data-price="99.9">购买</button>
+
+<script>
+  const btn = document.getElementById('buy-btn');
+  
+  btn.addEventListener('click', () => {
+    const id = parseInt(btn.dataset.productId, 10);
+    const price = parseFloat(btn.dataset.price);
+    console.log(`购买商品 ID=${id}，价格=${price}`);
+  });
+</script>
+```
