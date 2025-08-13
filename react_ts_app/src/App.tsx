@@ -6,6 +6,7 @@ import UserDetail from './pages/UserDetail'
 import ProductsList from './pages/ProductsList'
 import ProductDetail from './pages/ProductDetail'
 import UsersPage from './pages/UsersPage'
+import ImageUpload from './pages/ImageUpload'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="products" element={<ProductsList />} />
         <Route path="products/:id" element={<ProductDetail />} />
         <Route path="usersPage" element={<UsersPage />} />
+        <Route path="imageUpload" element={<ImageUpload />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
