@@ -1,4 +1,3 @@
-import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -6,6 +5,7 @@ import UsersList from './pages/UsersList'
 import UserDetail from './pages/UserDetail'
 import ProductsList from './pages/ProductsList'
 import ProductDetail from './pages/ProductDetail'
+import UsersPage from './pages/UsersPage'
 
 export default function App() {
   return (
@@ -16,6 +16,7 @@ export default function App() {
         <Route path="users/:id" element={<UserDetail />} />
         <Route path="products" element={<ProductsList />} />
         <Route path="products/:id" element={<ProductDetail />} />
+        <Route path="usersPage" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
