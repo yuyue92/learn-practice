@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
@@ -14,7 +13,8 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
 const items = [
   { text: '首页', path: '/', icon: <DashboardIcon /> },
   { text: '用户管理', path: '/users', icon: <PeopleIcon /> },
-  { text: '商品管理', path: '/products', icon: <ShoppingBagIcon /> }
+  { text: '商品管理', path: '/products', icon: <ShoppingBagIcon /> },
+  { text: '数据管理', path: '/usersPage', icon: <PeopleIcon /> },
 ]
 
 type Props = {
