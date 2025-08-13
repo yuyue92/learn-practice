@@ -15,6 +15,7 @@ const items = [
   { text: '用户管理', path: '/users', icon: <PeopleIcon /> },
   { text: '商品管理', path: '/products', icon: <ShoppingBagIcon /> },
   { text: '数据管理', path: '/usersPage', icon: <PeopleIcon /> },
+  { text: '图片上传', path: '/imageUpload', icon: <ShoppingBagIcon /> },
 ]
 
 type Props = {
