@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+  /* 主体部分：左侧菜单 + 右侧内容 */
+  .layoutContainer {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px); /* 假设 Navbar 高度是60px */
+  }
+  
+  /* 左侧菜单 */
+  .sidebar {
+    width: 220px;
+    background: #f5f5f5;
+    border-right: 1px solid #ddd;
+    box-sizing: border-box;
+  }
+
+  
+  /* 右侧内容 */
+  .content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  
+  /* Container */
+  .mainContainer {
+    width: 100vw;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+  

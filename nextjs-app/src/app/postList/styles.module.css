@@ -1,0 +1,24 @@
+.postWrapper {
+    padding: 22px;
+}
+.postWrapper .postList {
+    list-style: none;
+    border: 1px solid #ccc;
+}
+.postWrapper .postList>li {
+    border-bottom: 1px solid #ccc;
+    margin: 11px;
+}
+.postWrapper .postList>li .postItem {
+    padding: 3px;
+    display: flex;
+    justify-content: center;
+}
+.postWrapper .postList>li .postItem>span {
+    display: inline-block;
+    min-width: 200px;
+}
+.postWrapper .redText {
+    color: red;
+    font-size: 22px;
+}

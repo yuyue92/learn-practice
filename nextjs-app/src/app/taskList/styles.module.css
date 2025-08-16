@@ -1,0 +1,36 @@
+.contentWrapper {
+    border: 1px solid #ccc;
+    padding: 20px;
+}
+.contentWrapper .inputWrapper {
+    border-bottom: 1px solid #ccc;
+}
+.contentWrapper .taskwrapper {
+    list-style: none;
+}
+.contentWrapper .taskwrapper>li {
+    margin: 11px;
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+.contentWrapper .inputTxt {
+    padding: 5px;
+}
+.contentWrapper .addBtn{
+    padding: 5px;
+    margin-left: 11px;
+    color: green;
+}
+.contentWrapper .taskwrapper .showTxt {
+    display: inline-block;
+    min-width: 100px;
+    padding: 3px;
+}
+.contentWrapper .taskwrapper .doned {
+    background: gray;
+}
+.contentWrapper .taskwrapper .deleteBtn{
+    padding: 5px;
+    margin-left: 11px;
+    color: red;
+}
