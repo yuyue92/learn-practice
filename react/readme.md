@@ -53,6 +53,21 @@
    - JWT 鉴权；
    - CSRF / CORS 防护；
 
+4. 性能优化与部署
+- 性能优化：
+   - next/image（图片懒加载 & 优化）；
+   - next/script（脚本优化）；
+   - 代码分割、按需加载；
+   - RSC（React Server Components）；
+ 
+- SEO优化：
+   - next/head（pages 目录）；
+   - generateMetadata（app 目录）；
+   - sitemap、robots.txt；
+ 
+- 国际化 (i18n)： 内置 i18n、next-intl / react-intl
+ 
+
 
 
 
