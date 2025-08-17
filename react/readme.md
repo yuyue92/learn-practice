@@ -42,6 +42,16 @@
    - 动态路由（[id].tsx）；
    - Catch-all 路由（[...slug].tsx）；
    - 路由组 & 并行/嵌套路由（app 目录）；
+ 
+- 状态管理：
+   - 内置 Context；
+   - Redux Toolkit / Zustand / Jotai；
+   - React Query / SWR（数据缓存）；
+ 
+- 认证与安全：
+   - NextAuth.js（用户登录认证）；
+   - JWT 鉴权；
+   - CSRF / CORS 防护；
 
 
 
