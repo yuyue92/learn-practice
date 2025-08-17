@@ -1,0 +1,60 @@
+:root {
+    --primary-color: #42b983;
+    --secondary-color: #34495e;
+    --background-color: #ffffff;
+    --text-color: #2c3e50;
+    --border-color: #eaeaea;
+    --sidebar-bg: #34495e;
+    --sidebar-text: #ecf0f1;
+    --topbar-bg: #2c3e50;
+    --topbar-text: #ffffff;
+  }
+  
+  body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+  }
+  
+  /* 更新组件样式使用CSS变量 */
+  .top-bar {
+    background-color: var(--topbar-bg);
+    color: var(--topbar-text);
+  }
+  
+  .side-menu {
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+  }
+  
+  .content-area {
+    background-color: var(--background-color);
+    color: var(--text-color);
+  }
+  
+  /* 其他需要适配主题的组件样式 */
+
+.btn {
+    padding: 5px;
+    margin: 5px;
+}
+.border {
+    border: 1px solid #ccc;
+}
+.p-5 {
+    padding: 5px;
+}
+.m-5 {
+    margin: 5px;
+}
+.inline {
+    display: inline-block;
+}
+.w-100 {
+    width: 100px;
+}
+.w-200 {
+    width: 200px;
+}
+.w-500 {
+    width: 500px;
+}
