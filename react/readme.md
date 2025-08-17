@@ -34,3 +34,16 @@
    - CSS Modules；
    - Tailwind CSS（推荐）；
    - styled-components / emotion；
+
+3. 进阶功能
+- API 路由：在 pages/api 或 app/api 中创建 API、与前端交互（fetch / axios）；
+- 中间件：middleware.ts 用于鉴权、重定向、日志等；
+- 路由进阶：
+   - 动态路由（[id].tsx）；
+   - Catch-all 路由（[...slug].tsx）；
+   - 路由组 & 并行/嵌套路由（app 目录）；
+
+
+
+
+
