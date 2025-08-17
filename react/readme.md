@@ -1,5 +1,5 @@
 **Next.js 学习路线图**
-1. 前置基础（打牢地基）
+**1. 前置基础（打牢地基）**
 - HTML / CSS / JavaScript 基础：
    - 语义化 HTML、CSS Flex/Grid 布局、响应式设计；
    - ES6+ 特性（解构、Promise、async/await、模块化）
@@ -10,7 +10,7 @@
    - React Router（理解路由的基本概念，Next.js 有内置的路由系统）；
    - React 性能优化（memo、useMemo、useCallback）
 
-2. Next.js 入门核心
+**2. Next.js 入门核心**
 - 了解 Next.js 的特点：SSR（服务端渲染）、SSG（静态生成）、ISR（增量静态生成）：
 - 项目基础：
    - 创建项目：npx create-next-app@latest；
@@ -35,7 +35,7 @@
    - Tailwind CSS（推荐）；
    - styled-components / emotion；
 
-3. 进阶功能
+**3. 进阶功能**
 - API 路由：在 pages/api 或 app/api 中创建 API、与前端交互（fetch / axios）；
 - 中间件：middleware.ts 用于鉴权、重定向、日志等；
 - 路由进阶：
@@ -53,7 +53,7 @@
    - JWT 鉴权；
    - CSRF / CORS 防护；
 
-4. 性能优化与部署
+**4. 性能优化与部署**
 - 性能优化：
    - next/image（图片懒加载 & 优化）；
    - next/script（脚本优化）；
