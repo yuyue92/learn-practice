@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(发送方标签页)</title>
+</head>
+<body>
+    <h1>(发送方标签页)发送值
+        <input type="text" id="inputtxt1" onkeydown="handleEnter(event)"/>
+    </h1>
+    <script>
+        // 发送方标签页
+        // localStorage.setItem('message', 'text1')        //设置初始值
+        // 发送方和接收方
+        const channel = new BroadcastChannel('my_channel');
+        function handleEnter(event) {
+            if (event.key === "Enter") { // 检测是否按下回车键
+                // localStorage.setItem('message', event.target.value)
+                // 发送消息
+                channel.postMessage({ type: 'alert', content: event.target.value });
+            }
+        }
+        // 关闭频道
+        // channel.close();
+    </script>
+</body>
+</html>

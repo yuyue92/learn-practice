@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接收方标签页</title>
+</head>
+<body>
+    <h1>(接收方标签页): <span id="receiveSpan"></span></h1>
+    <script>        
+        // 接收方标签页
+        /* window.addEventListener('storage', (e) => {
+            if (e.key === 'message') {
+                const data = e.newValue;
+                console.log('Received:', data);
+                document.querySelector('#receiveSpan').innerText = data
+            }
+        }); */
+        // 接收方
+        const channel = new BroadcastChannel('my_channel');
+        // 接收消息
+        channel.onmessage = (e) => {
+            console.log('txt: ', e.data);
+            document.querySelector('#receiveSpan').innerText = e.data.content;
+        };
+
+        // 关闭频道
+        // channel.close();
+    </script>
+</body>
+</html>
