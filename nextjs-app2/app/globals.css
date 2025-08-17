@@ -1,0 +1,35 @@
+/* app/globals.css */
+@import "tailwindcss";
+/* 如果你使用 legacy 的 JS/TS 配置文件，需要显式声明路径 */
+@config "../tailwind.config.ts";  /* ← 路径按你的项目结构调整 */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+  }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+  }
+
+  /* shadcn 模板里常见：给所有元素应用边框色变量 */
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
