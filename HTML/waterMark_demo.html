@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow DOM 水印防护</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .content {
+            padding: 20px;
+            height: 1100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>敏感内容页面</h1>
+        <p>此处是页面正文内容...</p>
+    </div>
+
+    <script>
+        // 1. 创建 Shadow Host（隐藏的容器）
+        const shadowHost = document.createElement('div');
+        shadowHost.style.all = 'initial'; // 重置所有样式
+        document.body.appendChild(shadowHost);
+
+        // 2. 附加 Closed Shadow DOM（外部无法直接访问）
+        const shadowRoot = shadowHost.attachShadow({ mode: 'closed' });
+        
+        // 3. 在 Shadow DOM 内创建水印
+        shadowRoot.innerHTML = `
+            <style>
+                #watermark {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    pointer-events: none;
+                    z-index: 2147483647; /* 最大z-index */
+                }
+            </style>
+            <canvas id="watermark"></canvas>
+        `;
+
+        // 4. 绘制水印内容
+        const watermark = shadowRoot.getElementById('watermark');
+        const ctx = watermark.getContext('2d');
+        
+        function drawWatermark() {
+            watermark.width = window.innerWidth;
+            watermark.height = window.innerHeight;
+            /////////
+            // 水印文本
+            const text = '机密文件 严禁外传';
+            const fontSize = 20;
+            const fontFamily = 'Microsoft YaHei';
+            const color = 'rgba(200, 200, 200, 0.2)';
+            const angle = -20; // 旋转角度
+            
+            ctx.font = `${fontSize}px ${fontFamily}`;
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            
+            // 计算水印间距
+            const textWidth = ctx.measureText(text).width;
+            const spacingX = textWidth * 2;
+            const spacingY = fontSize * 4;
+            
+            // 绘制水印
+            ctx.save();
+            for (let x = 0; x < watermark.width; x += spacingX) {
+                for (let y = 0; y < watermark.height; y += spacingY) {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle * Math.PI / 180);
+                    ctx.fillText(text, 0, 0);
+                    ctx.restore();
+                }
+            }
+            ctx.restore();
+
+        }
+
+        // 5. 窗口大小变化时重绘
+        window.addEventListener('resize', drawWatermark);
+        drawWatermark();
+
+        // 6. 额外防护：防止通过父元素删除
+        const observer = new MutationObserver((mutations) => {
+            if (!document.body.contains(shadowHost)) {
+                document.body.appendChild(shadowHost);
+                console.warn('尝试删除水印已被阻止');
+            }
+        });
+        observer.observe(document.body, { childList: true });
+    </script>
+</body>
+</html>
