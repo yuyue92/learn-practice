@@ -1,0 +1,41 @@
+{
+  "name": "electron_crud",
+  "version": "1.0.0",
+  "description": "Electron 应用示例，实现数据的本地存储、展示和管理功能",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+	  "build": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^36.5.0",
+    "electron-builder": "^23.0.0"
+  },
+  "build": {
+    "appId": "com.example.myapp",
+    "productName": "CRUDApp",
+    "compression": "maximum",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
