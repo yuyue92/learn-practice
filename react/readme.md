@@ -23,3 +23,14 @@
    - SSG（Static Site Generation）；
    - ISR（Incremental Static Regeneration）；
    - CSR（Client-Side Rendering）；
+ 
+- 数据获取：
+   - getStaticProps / getServerSideProps（pages 目录）；
+   - fetch / React Server Components（app 目录）；
+   - 静态资源 & 图片优化（next/image）；
+ 
+- 样式：
+   - 内置支持 CSS / Sass；
+   - CSS Modules；
+   - Tailwind CSS（推荐）；
+   - styled-components / emotion；
