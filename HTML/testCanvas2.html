@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>canvas动画</title>
+</head>
+<body>
+    <span>小球弹跳动画</span>
+    <canvas id="canvas4" width="400" height="200" style="border:1px solid #f44"></canvas>
+    <span>粒子效果</span>
+    <canvas id="canvas5" width="400" height="200" style="border:1px solid #fcc"></canvas>
+    <span>交互示例（鼠标绘图）</span>
+    <canvas id="canvas6" width="500" height="300" style="border:1px solid #000;"></canvas>
+
+
+<script>
+    const canvas4 = document.getElementById('canvas4');
+    const ctx4 = canvas4.getContext('2d');
+
+    let x = 50, y = 50, dx = 2, dy = 2, radius = 20;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        ctx4.clearRect(0, 0, canvas4.width, canvas4.height);
+
+        // 绘制小球
+        ctx4.beginPath();
+        ctx4.arc(x, y, radius, 0, Math.PI * 2);
+        ctx4.fillStyle = 'red';
+        ctx4.fill();
+
+        // 边界检测
+        if (x + radius > canvas4.width || x - radius < 0) dx = -dx;
+        if (y + radius > canvas4.height || y - radius < 0) dy = -dy;
+
+        x += dx;
+        y += dy;
+    }
+    animate();
+    ////////
+    const canvas5 = document.getElementById('canvas5');
+    const ctx5 = canvas5.getContext('2d');
+    const particles = [];
+
+    // 创建粒子
+    for (let i = 0; i < 10; i++) {
+    particles.push({
+        x: Math.random() * canvas5.width,
+        y: Math.random() * canvas5.height,
+        size: Math.random() * 5,
+        speedX: Math.random() * 2 - 1,
+        speedY: Math.random() * 2 - 1
+    });
+    }
+
+    function animateParticles() {
+        requestAnimationFrame(animateParticles);
+        ctx5.clearRect(0, 0, canvas5.width, canvas5.height);
+
+        particles.forEach(p => {
+            ctx5.beginPath();
+            ctx5.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx5.fillStyle = 'rgba(0, 100, 255, 0.5)';
+            ctx5.fill();
+
+            // 移动粒子
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            // 边界反弹
+            if (p.x < 0 || p.x > canvas5.width) p.speedX = -p.speedX;
+            if (p.y < 0 || p.y > canvas5.height) p.speedY = -p.speedY;
+        });
+    }
+    animateParticles();
+    ///////
+    
+    // const canvas6 = document.getElementById('canvas6');
+    // const ct6 = canvas6.getContext('2d');
+    /* let isDrawing = false;
+
+    canvas6.addEventListener('mousedown', () => {
+        isDrawing = true
+    });
+    canvas6.addEventListener('mouseup', () => {
+        isDrawing = false
+    });
+    // 鼠标移出 Canvas 时也结束绘制
+    canvas6.addEventListener('mouseout', () => {
+        isDrawing = false;
+    });
+    canvas6.addEventListener('mousemove', draw);
+
+    function draw(e) {
+        if (!isDrawing) return;
+        ct6.lineWidth = 5;
+        ct6.lineCap = 'round';
+        ct6.strokeStyle = '#000';
+
+        ct6.lineTo(e.clientX - canvas6.offsetLeft, e.clientY - canvas6.offsetTop);
+        ct6.stroke();
+        ct6.beginPath();
+        ct6.moveTo(e.clientX - canvas6.offsetLeft, e.clientY - canvas6.offsetTop);
+    } */
+    ///////
+
+    const canvas6 = document.getElementById('canvas6');
+    const ctx6 = canvas6.getContext('2d');
+
+  let isDrawing = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  // 高 DPI 适配
+  const dpr = window.devicePixelRatio || 1;
+  canvas6.width = canvas6.clientWidth * dpr;
+  canvas6.height = canvas6.clientHeight * dpr;
+  ctx6.scale(dpr, dpr);
+
+  // 坐标转换
+  function getCanvasPosition(event) {
+    const rect = canvas6.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) * (canvas6.width / rect.width / dpr),
+      y: (event.clientY - rect.top) * (canvas6.height / rect.height / dpr)
+    };
+  }
+
+  // 鼠标按下：重置起始点
+  canvas6.addEventListener('mousedown', (e) => {
+    const pos = getCanvasPosition(e);
+    isDrawing = true;
+    [lastX, lastY] = [pos.x, pos.y]; // 关键修复：重置起始点
+    ctx6.beginPath();
+    ctx6.moveTo(lastX, lastY);        // 显式移动到新起点
+  });
+
+  // 鼠标移动：绘制线条
+  canvas6.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    const pos = getCanvasPosition(e);
+    
+    ctx6.lineTo(pos.x, pos.y);
+    ctx6.strokeStyle = '#000';
+    ctx6.lineWidth = 2;
+    ctx6.stroke();
+
+    [lastX, lastY] = [pos.x, pos.y]; // 更新终点
+  });
+
+  // 鼠标松开：结束绘制
+  canvas6.addEventListener('mouseup', () => {
+    isDrawing = false;
+  });
+
+  // 鼠标移出 Canvas 时也结束绘制
+  canvas6.addEventListener('mouseout', () => {
+    isDrawing = false;
+  });
+</script>
+</body>
+</html>
