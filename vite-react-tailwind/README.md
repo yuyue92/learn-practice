@@ -5,12 +5,12 @@
 ## 使用
 
 ```bash
-cd vite-react-tailwind-starter
+cd vite-react-tailwind
 
 # 安装依赖
 npm install
 
-# 启动开发
+# 启动开发(一个命令启动 React（Vite）+ Go 后端)
 npm run dev
 
 # 构建
