@@ -30,3 +30,12 @@ const theme = settings?.appearance?.theme ?? 'light';
 let timeout = config.timeout; // 可能是 undefined
 timeout ??= 5000; // 只在为 null/undefined 时赋 5000
 ```
+
+**使用建议**
+- 条件分支，使用`?:`, 超过一层的时候使用IF else；
+- 给默认值优先使用`??`, 它不会误伤合法的`0 / '' / false`;
+- 访问深层属性使用`?.`, 再配合`??`给一个最终默认值，`obj?.a?.b ?? defaultVal`;
+
+
+判断规则：truthy/falsy（用于 ?:、||、&&）, `falsy 有：false, 0, -0, 0n, '', null, undefined, NaN；其他都 truthy。`. 
+
