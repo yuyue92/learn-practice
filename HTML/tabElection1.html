@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Election Manager 演示</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .leader-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .leader-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .leader-no {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .log-container {
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+        
+        .log-timestamp {
+            color: #888;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        
+        .tabs-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .tab-item {
+            background: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .tab-item.leader {
+            background: #4caf50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Tab Election Manager</h1>
+            <p>多标签页领导者选举演示</p>
+        </div>
+        
+        <div class="info-box">
+            <h3>📖 使用说明</h3>
+            <p><strong>打开多个标签页</strong>来测试领导者选举功能：</p>
+            <ul>
+                <li>复制当前页面URL，在新标签页中打开</li>
+                <li>观察不同标签页之间的领导者选举过程</li>
+                <li>关闭领导者标签页，看其他标签页如何重新选举</li>
+                <li>使用下方按钮手动触发选举或销毁实例</li>
+            </ul>
+        </div>
+        
+        <div class="status-card">
+            <h3>📊 当前状态</h3>
+            <div id="status">
+                <p>📋 Tab ID: <code id="tabId">-</code></p>
+                <p>👑 是否为领导者: <span id="isLeader">-</span></p>
+                <p>🎯 当前领导者: <code id="currentLeader">-</code></p>
+                <p>📱 活跃标签页数量: <span id="activeTabsCount">-</span></p>
+                <p>🔄 实例状态: <span id="instanceStatus">-</span></p>
+            </div>
+            <div class="tabs-list" id="tabsList"></div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="triggerElection()">🗳️ 手动触发选举</button>
+            <button onclick="destroyManager()">💥 销毁实例</button>
+            <button onclick="recreateManager()">🔄 重新创建实例</button>
+            <button onclick="clearLogs()">🧹 清空日志</button>
+        </div>
+        
+        <div class="log-container" id="logContainer">
+            <div class="log-entry">
+                <span class="log-timestamp">[启动]</span> 系统初始化中...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TabElectionManager {
+          constructor(channelName = 'tab-election') {
+            this.channelName = channelName;
+            this.channel = null;
+            this.tabId = this.generateTabId();
+            this.isLeader = false;
+            this.isDestroyed = false;
+            this.callbacks = {
+              onLeaderChange: [],
+              onTabJoin: [],
+              onTabLeave: []
+            };
+            
+            // 选举相关
+            this.electionTimeout = null;
+            this.heartbeatInterval = null;
+            this.currentLeader = null;
+            this.activeTabs = new Map();
+            
+            // 配置
+            this.config = {
+              electionTimeout: 3000,
+              heartbeatInterval: 1000,
+              leaderTimeout: 5000
+            };
+            
+            this.init();
+          }
+          
+          generateTabId() {
+            return `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          }
+          
+          init() {
+            if (this.isDestroyed) return;
+            
+            try {
+              this.channel = new BroadcastChannel(this.channelName);
+              this.channel.addEventListener('message', (event) => this.handleMessage(event));
+              
+              // 页面卸载时清理
+              window.addEventListener('beforeunload', () => this.destroy());
+              window.addEventListener('unload', () => this.destroy());
+              
+              // 启动选举
+              this.startElection();
+              
+            } catch (error) {
+              console.error('Failed to initialize TabElectionManager:', error);
+            }
+          }
+          
+          // 安全的广播方法
+          broadcast(message) {
+            if (this.isDestroyed || !this.channel) {
+              console.warn('Cannot broadcast: channel is closed or destroyed');
+              return false;
+            }
+            
+            try {
+              this.channel.postMessage({
+                ...message,
+                tabId: this.tabId,
+                timestamp: Date.now()
+              });
+              return true;
+            } catch (error) {
+              console.error('Broadcast failed:', error);
+              if (error.name === 'InvalidStateError') {
+                this.isDestroyed = true;
+              }
+              return false;
+            }
+          }
+          
+          handleMessage(event) {
+            if (this.isDestroyed) return;
+            
+            const { type, tabId, timestamp } = event.data;
+            
+            // 忽略自己发送的消息
+            if (tabId === this.tabId) return;
+            
+            switch (type) {
+              case 'election-start':
+                this.handleElectionStart(event.data);
+                break;
+              case 'election-vote':
+                this.handleElectionVote(event.data);
+                break;
+              case 'leader-announcement':
+                this.handleLeaderAnnouncement(event.data);
+                break;
+              case 'heartbeat':
+                this.handleHeartbeat(event.data);
+                break;
+              case 'tab-join':
+                this.handleTabJoin(event.data);
+                break;
+              case 'tab-leave':
+                this.handleTabLeave(event.data);
+                break;
+            }
+          }
+          
+          startElection() {
+            if (this.isDestroyed) return;
+            
+            console.log(`Tab ${this.tabId} starting election`);
+            
+            // 清除之前的选举
+            this.clearElectionTimeout();
+            
+            // 广播选举开始
+            this.broadcast({
+              type: 'election-start'
+            });
+            
+            // 广播自己加入
+            this.broadcast({
+              type: 'tab-join'
+            });
+            
+            // 设置选举超时
+            this.electionTimeout = setTimeout(() => {
+              this.concludeElection();
+            }, this.config.electionTimeout);
+          }
+          
+          handleElectionStart(data) {
+            if (this.isDestroyed) return;
+            
+            // 如果收到其他标签页的选举请求，参与投票
+            this.broadcast({
+              type: 'election-vote',
+              vote: this.tabId
+            });
+          }
+          
+          handleElectionVote(data) {
+            if (this.isDestroyed) return;
+            
+            const { tabId, vote } = data;
+            this.activeTabs.set(tabId, {
+              id: tabId,
+              vote: vote,
+              lastSeen: Date.now()
+            });
+          }
+          
+          concludeElection() {
+            if (this.isDestroyed) return;
+            
+            // 清除选举超时
+            this.clearElectionTimeout();
+            
+            // 添加自己到活跃标签页列表
+            this.activeTabs.set(this.tabId, {
+              id: this.tabId,
+              vote: this.tabId,
+              lastSeen: Date.now()
+            });
+            
+            // 选择领导者（选择最小的 tabId）
+            const sortedTabs = Array.from(this.activeTabs.values())
+              .sort((a, b) => a.id.localeCompare(b.id));
+            
+            if (sortedTabs.length > 0) {
+              const leaderId = sortedTabs[0].id;
+              
+              if (leaderId === this.tabId) {
+                this.becomeLeader();
+              } else {
+                this.currentLeader = leaderId;
+                this.isLeader = false;
+              }
+            }
+          }
+          
+          becomeLeader() {
+            if (this.isDestroyed) return;
+            
+            console.log(`Tab ${this.tabId} became leader`);
+            this.isLeader = true;
+            this.currentLeader = this.tabId;
+            
+            // 广播领导者声明
+            const announced = this.broadcast({
+              type: 'leader-announcement'
+            });
+            
+            if (announced) {
+              // 开始心跳
+              this.startHeartbeat();
+              
+              // 触发回调
+              this.triggerCallback('onLeaderChange', {
+                isLeader: true,
+                leaderId: this.tabId
+              });
+            }
+          }
+          
+          handleLeaderAnnouncement(data) {
+            if (this.isDestroyed) return;
+            
+            const { tabId } = data;
+            
+            if (this.isLeader && tabId !== this.tabId) {
+              // 如果当前是领导者但收到其他领导者声明，比较 tabId
+              if (tabId < this.tabId) {
+                this.resignLeadership();
+                this.currentLeader = tabId;
+              }
+            } else {
+              this.currentLeader = tabId;
+              this.isLeader = false;
+              
+              this.triggerCallback('onLeaderChange', {
+                isLeader: false,
+                leaderId: tabId
+              });
+            }
+          }
+          
+          startHeartbeat() {
+            if (this.isDestroyed) return;
+            
+            this.clearHeartbeat();
+            
+            this.heartbeatInterval = setInterval(() => {
+              if (this.isDestroyed) {
+                this.clearHeartbeat();
+                return;
+              }
+              
+              if (this.isLeader) {
+                const heartbeatSent = this.broadcast({
+                  type: 'heartbeat'
+                });
+                
+                // 如果心跳发送失败，可能需要重新初始化
+                if (!heartbeatSent) {
+                  this.clearHeartbeat();
+                  this.resignLeadership();
+                }
+              }
+            }, this.config.heartbeatInterval);
+          }
+          
+          handleHeartbeat(data) {
+            if (this.isDestroyed) return;
+            
+            const { tabId } = data;
+            
+            // 更新领导者的最后心跳时间
+            if (tabId === this.currentLeader) {
+              this.activeTabs.set(tabId, {
+                id: tabId,
+                lastSeen: Date.now()
+              });
+            }
+          }
+          
+          handleTabJoin(data) {
+            if (this.isDestroyed) return;
+            
+            const { tabId } = data;
+            this.activeTabs.set(tabId, {
+              id: tabId,
+              lastSeen: Date.now()
+            });
+            
+            this.triggerCallback('onTabJoin', { tabId });
+            
+            // 如果是领导者，向新标签页宣布自己的地位
+            if (this.isLeader) {
+              setTimeout(() => {
+                this.broadcast({
+                  type: 'leader-announcement'
+                });
+              }, 100);
+            }
+          }
+          
+          handleTabLeave(data) {
+            if (this.isDestroyed) return;
+            
+            const { tabId } = data;
+            this.activeTabs.delete(tabId);
+            
+            this.triggerCallback('onTabLeave', { tabId });
+            
+            // 如果离开的是领导者，开始新的选举
+            if (tabId === this.currentLeader) {
+              console.log('Leader left, starting new election');
+              this.currentLeader = null;
+              this.isLeader = false;
+              this.startElection();
+            }
+          }
+          
+          resignLeadership() {
+            if (this.isLeader) {
+              console.log(`Tab ${this.tabId} resigned from leadership`);
+              this.isLeader = false;
+              this.clearHeartbeat();
+              
+              this.triggerCallback('onLeaderChange', {
+                isLeader: false,
+                leaderId: this.currentLeader
+              });
+            }
+          }
+          
+          clearElectionTimeout() {
+            if (this.electionTimeout) {
+              clearTimeout(this.electionTimeout);
+              this.electionTimeout = null;
+            }
+          }
+          
+          clearHeartbeat() {
+            if (this.heartbeatInterval) {
+              clearInterval(this.heartbeatInterval);
+              this.heartbeatInterval = null;
+            }
+          }
+          
+          // 事件监听
+          on(event, callback) {
+            if (this.callbacks[event]) {
+              this.callbacks[event].push(callback);
+            }
+          }
+          
+          off(event, callback) {
+            if (this.callbacks[event]) {
+              const index = this.callbacks[event].indexOf(callback);
+              if (index > -1) {
+                this.callbacks[event].splice(index, 1);
+              }
+            }
+          }
+          
+          triggerCallback(event, data) {
+            if (this.callbacks[event]) {
+              this.callbacks[event].forEach(callback => {
+                try {
+                  callback(data);
+                } catch (error) {
+                  console.error(`Error in ${event} callback:`, error);
+                }
+              });
+            }
+          }
+          
+          // 获取状态
+          getStatus() {
+            return {
+              tabId: this.tabId,
+              isLeader: this.isLeader,
+              currentLeader: this.currentLeader,
+              activeTabs: Array.from(this.activeTabs.keys()),
+              isDestroyed: this.isDestroyed
+            };
+          }
+          
+          // 手动触发选举
+          triggerElection() {
+            if (!this.isDestroyed) {
+              this.startElection();
+            }
+          }
+          
+          // 销毁实例
+          destroy() {
+            if (this.isDestroyed) return;
+            
+            console.log(`Tab ${this.tabId} is being destroyed`);
+            this.isDestroyed = true;
+            
+            // 广播离开消息
+            if (this.channel) {
+              try {
+                this.channel.postMessage({
+                  type: 'tab-leave',
+                  tabId: this.tabId,
+                  timestamp: Date.now()
+                });
+              } catch (error) {
+                console.warn('Failed to broadcast tab-leave message:', error);
+              }
+            }
+            
+            // 清理定时器
+            this.clearElectionTimeout();
+            this.clearHeartbeat();
+            
+            // 关闭广播频道
+            if (this.channel) {
+              try {
+                this.channel.close();
+              } catch (error) {
+                console.warn('Failed to close broadcast channel:', error);
+              }
+              this.channel = null;
+            }
+            
+            // 重置状态
+            this.isLeader = false;
+            this.currentLeader = null;
+            this.activeTabs.clear();
+            this.callbacks = {
+              onLeaderChange: [],
+              onTabJoin: [],
+              onTabLeave: []
+            };
+          }
+        }
+
+        // 全局变量
+        let tabManager = null;
+        
+        // 日志函数
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // 更新状态显示
+        function updateStatus() {
+            if (!tabManager) {
+                document.getElementById('tabId').textContent = '未初始化';
+                document.getElementById('isLeader').innerHTML = '<span class="leader-badge leader-no">未知</span>';
+                document.getElementById('currentLeader').textContent = '无';
+                document.getElementById('activeTabsCount').textContent = '0';
+                document.getElementById('instanceStatus').textContent = '已销毁';
+                document.getElementById('tabsList').innerHTML = '';
+                return;
+            }
+            
+            const status = tabManager.getStatus();
+            
+            document.getElementById('tabId').textContent = status.tabId.substring(0, 20) + '...';
+            document.getElementById('isLeader').innerHTML = status.isLeader 
+                ? '<span class="leader-badge leader-yes">是</span>' 
+                : '<span class="leader-badge leader-no">否</span>';
+            document.getElementById('currentLeader').textContent = status.currentLeader 
+                ? status.currentLeader.substring(0, 20) + '...' 
+                : '无';
+            document.getElementById('activeTabsCount').textContent = status.activeTabs.length;
+            document.getElementById('instanceStatus').textContent = status.isDestroyed ? '已销毁' : '运行中';
+            
+            // 更新标签页列表
+            const tabsList = document.getElementById('tabsList');
+            tabsList.innerHTML = '';
+            
+            // 添加当前标签页
+            const currentTab = document.createElement('div');
+            currentTab.className = `tab-item ${status.isLeader ? 'leader' : ''}`;
+            currentTab.textContent = `当前 (${status.tabId.substring(4, 10)})`;
+            tabsList.appendChild(currentTab);
+            
+            // 添加其他标签页
+            status.activeTabs.forEach(tabId => {
+                if (tabId !== status.tabId) {
+                    const tabItem = document.createElement('div');
+                    tabItem.className = `tab-item ${tabId === status.currentLeader ? 'leader' : ''}`;
+                    tabItem.textContent = tabId.substring(4, 10);
+                    tabsList.appendChild(tabItem);
+                }
+            });
+        }
+        
+        // 初始化管理器
+        function initManager() {
+            if (tabManager) {
+                tabManager.destroy();
+            }
+            
+            tabManager = new TabElectionManager('demo-election');
+            
+            // 注册事件监听器
+            tabManager.on('onLeaderChange', (data) => {
+                addLog(`🏆 领导权变更: ${data.isLeader ? '成为领导者' : '失去领导权'} (领导者: ${data.leaderId.substring(4, 10)})`);
+                updateStatus();
+            });
+            
+            tabManager.on('onTabJoin', (data) => {
+                addLog(`📱 标签页加入: ${data.tabId.substring(4, 10)}`);
+                updateStatus();
+            });
+            
+            tabManager.on('onTabLeave', (data) => {
+                addLog(`📱 标签页离开: ${data.tabId.substring(4, 10)}`);
+                updateStatus();
+            });
+            
+            addLog(`🚀 Tab Election Manager 已初始化 (ID: ${tabManager.tabId.substring(4, 10)})`);
+            updateStatus();
+        }
+        
+        // 控制函数
+        function triggerElection() {
+            if (tabManager && !tabManager.isDestroyed) {
+                tabManager.triggerElection();
+                addLog('🗳️ 手动触发选举');
+            } else {
+                addLog('❌ 无法触发选举: 实例未初始化或已销毁');
+            }
+        }
+        
+        function destroyManager() {
+            if (tabManager) {
+                const tabId = tabManager.tabId.substring(4, 10);
+                tabManager.destroy();
+                addLog(`💥 实例已销毁 (ID: ${tabId})`);
+                tabManager = null;
+                updateStatus();
+            } else {
+                addLog('❌ 没有可销毁的实例');
+            }
+        }
+        
+        function recreateManager() {
+            addLog('🔄 重新创建实例...');
+            initManager();
+        }
+        
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            addLog('🧹 日志已清空');
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('📄 页面加载完成');
+            initManager();
+            
+            // 定期更新状态显示
+            setInterval(updateStatus, 1000);
+        });
+        
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            if (tabManager) {
+                tabManager.destroy();
+            }
+        });
+    </script>
+</body>
+</html>
