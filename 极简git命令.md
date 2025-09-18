@@ -19,7 +19,11 @@
 - git checkout 分支名    //跳到别的分支
 - git checkout -- 文件名   //把改错的文件一键还原成上次提交的样子
 
+分支合并（MR，PR之前自测）
+- git checkout main   //先回到主分支
+- git merge 新分支名    //把刚刚做好的功能合进来
+
 忘记拉代码导致冲突？先stash 再pull
 - git stash    //把当前改进塞进口袋
-- git pull   拉取最新代码
-- gitstash pop   再把口袋里面的改动放出来，手动解决冲突即可
+- git pull   //拉取最新代码
+- gitstash pop   //再把口袋里面的改动放出来，手动解决冲突即可
