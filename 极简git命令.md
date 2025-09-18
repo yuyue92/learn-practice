@@ -26,4 +26,4 @@
 忘记拉代码导致冲突？先stash 再pull
 - git stash    //把当前改进塞进口袋
 - git pull   //拉取最新代码
-- gitstash pop   //再把口袋里面的改动放出来，手动解决冲突即可
+- git stash pop   //再把口袋里面的改动放出来，手动解决冲突即可
