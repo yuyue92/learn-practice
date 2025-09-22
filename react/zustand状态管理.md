@@ -62,3 +62,10 @@ export default function App() {
   );
 }
 ```
+四、说明：
+- create：zustand 的核心，用来生成 store。
+- set：更新状态。
+- get：获取当前状态。
+- 组件里直接 useCounterStore() 就能读写全局数据。
+- 不需要额外的 Provider，全局天然可用。
+
