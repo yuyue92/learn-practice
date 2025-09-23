@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复杂布局示例：杂志布局</title>
+    <style>
+        * {padding: 0; margin: 0;}
+        /* 复杂布局样式 */
+        .magazine-layout {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "sidebar content"
+                "footer footer";
+            grid-template-columns: 200px 1fr;
+            grid-template-rows: 80px 1fr 60px;
+            height: 100vh;
+            gap: 10px;
+        }
+
+        .header {
+            grid-area: header;
+            background: #333;
+            color: white;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: #f0f0f0;
+        }
+
+        .content {
+            grid-area: content;
+            background: #fff;
+            overflow-y: auto;
+            border: 1px solid #ccc; padding: 11px;
+            padding: 30px;
+        }
+
+        .footer {
+            grid-area: footer;
+            background: #333;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <p>复杂布局示例：杂志布局</p> -->
+    <div class="magazine-layout">
+        <header class="header">标题</header>
+        <aside class="sidebar">侧边栏</aside>
+        <main class="content">主要内容
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>112</p>
+            <p>11</p>
+            <p>11</p>
+            <p>11</p>
+            <p>131</p>
+            <p>11</p>
+            <p>11</p>
+            <p>141</p>
+            <p>11</p>
+            <p>11</p>
+        </main>
+        <footer class="footer">页脚</footer>
+    </div>
+</body>
+
+</html>
