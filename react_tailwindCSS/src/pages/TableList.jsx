@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { create } from 'zustand'
+import { useTableStore } from '../store/useTableStore'
 
 // ====== 内置 demo 数据（可用 <TableList rows={...}/> 覆盖）======
 const DEFAULT_USERS = [
@@ -20,35 +20,6 @@ const DEFAULT_USERS = [
   { id: 15, name: 'Olivia', role: 'Viewer', status: 'Active' },
 ]
 
-// ====== 本组件私有的 Zustand store（精简）======
-const useTableStore = create((set, get) => ({
-  filters: { query: '', role: 'all', status: 'all' },
-  sort: { key: 'name', dir: 'asc' },
-  pagination: { page: 1, pageSize: 10 },
-
-  setFilter: (key, value) =>
-    set((s) => ({
-      filters: { ...s.filters, [key]: value },
-      pagination: { ...s.pagination, page: 1 }, // 改筛选回到第一页
-    })),
-  resetFilters: () =>
-    set((s) => ({
-      filters: { query: '', role: 'all', status: 'all' },
-      pagination: { ...s.pagination, page: 1 },
-    })),
-
-  setSort: (key) =>
-    set((s) => {
-      const dir = s.sort.key === key ? (s.sort.dir === 'asc' ? 'desc' : 'asc') : 'asc'
-      return { sort: { key, dir } }
-    }),
-
-  setPage: (page) =>
-    set((s) => ({ pagination: { ...s.pagination, page } })),
-  setPageSize: (size) =>
-    set(() => ({ pagination: { page: 1, pageSize: Number(size) || 10 } })),
-}))
-
 // ====== 合并后的 TableList 组件 ======
 export default function TableList({ rows = DEFAULT_USERS, className = '' }) {
   // —— 状态订阅（分别订阅，避免返回新对象引发循环）——
@@ -61,6 +32,8 @@ export default function TableList({ rows = DEFAULT_USERS, className = '' }) {
   const setSort = useTableStore((s) => s.setSort)
   const setPage = useTableStore((s) => s.setPage)
   const setPageSize = useTableStore((s) => s.setPageSize)
+
+  console.log({filters, sort, page, pageSize, setFilter, resetFilters },999999999999)
 
   // —— 搜索输入防抖 —— 
   const [localQuery, setLocalQuery] = useState(filters.query)
