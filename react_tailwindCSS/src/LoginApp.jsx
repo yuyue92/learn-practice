@@ -213,12 +213,15 @@ function AppNav() {
 /*********************** 页面 *************************/
 function Layout({ children }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 grid grid-rows-[auto,1fr] overflow-hidden">
       <AppNav />
-      <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+      <main className="min-h-0 overflow-y-auto">
+        <div className="max-w-6xl mx-auto px-4 py-6">{children}</div>
+      </main>
     </div>
   );
 }
+
 
 function Dashboard() {
   const { user } = useAuth();
