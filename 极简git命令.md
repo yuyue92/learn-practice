@@ -27,3 +27,9 @@
 - git stash    //把当前改进塞进口袋
 - git pull   //拉取最新代码
 - git stash pop   //再把口袋里面的改动放出来，手动解决冲突即可
+
+查看当前分支
+- git branch
+- git branch --show-current      //显示当前分支名（脚本里很常用）
+- git branch -a                 //查看所有分支（本地 + 远程）
+
