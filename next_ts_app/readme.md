@@ -1,4 +1,4 @@
-next.js + typescript + tailwindCSS
+next.js + typescript + tailwindCSS + fastify.js
 
 运行：`npm install`
 
@@ -14,3 +14,5 @@ next.js + typescript + tailwindCSS
 - 菜单：在 components/Sidebar.tsx 的 links 数组增删菜单项即可。
 - 页面：在 app/ 目录新增文件夹 + page.tsx 即可添加新路由。
 - 布局：全局布局在 app/layout.tsx，若需要二级布局可在对应路由目录再加 layout.tsx。
+
+**实现“一键同时启动前后端”，并在 Next 开发服务器里代理到 Fastify，彻底避免 CORS。**
