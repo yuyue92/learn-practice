@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>结合使用 Flexbox 和 Grid布局样式</title>
+    <style>
+        .combined-layout {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+        }
+
+        .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #333;
+        color: white;
+        }
+
+        .header nav {
+        display: flex;
+        gap: 1rem;
+        }
+
+        .main-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1rem;
+        padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="combined-layout">
+        <header class="header">
+          <h1>网站标题</h1>
+          <nav>
+            <a href="#">链接1</a>
+            <a href="#">链接2</a>
+            <a href="#">链接3</a>
+          </nav>
+        </header>
+        <main class="main-content">
+          <article style="background: #ccc;">文章内容...</article>
+          <aside style="background: #ddd;">侧边内容</aside>
+        </main>
+      </div>
+    
+</body>
+</html>
