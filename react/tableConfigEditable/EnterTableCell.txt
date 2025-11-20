@@ -1,0 +1,181 @@
+import React, {
+  FC,
+  ChangeEvent,
+  FocusEvent,
+  KeyboardEvent,
+} from 'react';
+
+export type CellKind = 'readonly' | 'amount' | 'select';
+
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
+export interface CellData {
+  /** 唯一标识（列 key） */
+  key: string;
+  /** 单元格类型：只读 / 金额 / 下拉 */
+  kind: CellKind;
+  /** 当前值（受控） */
+  value: string;
+  /** 下拉选项（仅 select 用） */
+  options?: SelectOption[];
+  /** 是否必填，可以用于外部样式 */
+  required?: boolean;
+}
+
+/** 事件入参统一带上 cell + rowIndex + colIndex */
+export interface EnterTableCellProps {
+  cell: CellData;
+  rowIndex: number;
+  colIndex: number;
+
+  /** 聚焦时回调： onFocus={(e) => handleFouceFun(e, cell, rowIndex, colIndex)} */
+  onFocus?: (
+    e: FocusEvent<HTMLInputElement | HTMLSelectElement>,
+    cell: CellData,
+    rowIndex: number,
+    colIndex: number
+  ) => void;
+
+  onBlur?: (
+    e: FocusEvent<HTMLInputElement | HTMLSelectElement>,
+    cell: CellData,
+    rowIndex: number,
+    colIndex: number
+  ) => void;
+
+  onKeyDown?: (
+    e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>,
+    cell: CellData,
+    rowIndex: number,
+    colIndex: number
+  ) => void;
+
+  /** 统一的受控 value 变更回调 */
+  onChange?: (
+    value: string,
+    cell: CellData,
+    rowIndex: number,
+    colIndex: number
+  ) => void;
+
+  /** 选完下拉后调用，用于聚焦右边下一个单元格 */
+  focusNextCell?: (rowIndex: number, colIndex: number) => void;
+
+  /** 额外样式 */
+  className?: string;
+  tdClassName?: string;
+}
+
+/** 金额输入允许的格式：可选负号 + 整数 + 可选小数点后 2 位 */
+const amountRegex = /^-?\d*(\.\d{0,2})?$/;
+
+export const EnterTableCell: FC<EnterTableCellProps> = ({
+  cell,
+  rowIndex,
+  colIndex,
+  onFocus,
+  onBlur,
+  onKeyDown,
+  onChange,
+  focusNextCell,
+  className,
+  tdClassName,
+}) => {
+  /** 通用事件封装：统一带上坐标和 cell */
+  const handleFocus = (
+    e: FocusEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    onFocus?.(e, cell, rowIndex, colIndex);
+  };
+
+  const handleBlur = (
+    e: FocusEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    onBlur?.(e, cell, rowIndex, colIndex);
+  };
+
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    onKeyDown?.(e, cell, rowIndex, colIndex);
+  };
+
+  /** 金额输入：正则校验，只在合法时触发 onChange */
+  const handleAmountChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    // 允许空字符串（方便删除）、或符合金额格式
+    if (next === '' || amountRegex.test(next)) {
+      onChange?.(next, cell, rowIndex, colIndex);
+    } else {
+      // 非法字符：阻止更新（受控组件会回退到上一个合法值）
+      e.preventDefault();
+    }
+  };
+
+  /** 下拉选择：选中后自动跳到右边单元格 */
+  const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value;
+    onChange?.(next, cell, rowIndex, colIndex);
+    if (focusNextCell) {
+      focusNextCell(rowIndex, colIndex + 1);
+    }
+  };
+
+  /** 只读单元格：纯展示 */
+  if (cell.kind === 'readonly') {
+    return (
+      <td className={tdClassName}>
+        <span className={className}>{cell.value}</span>
+      </td>
+    );
+  }
+
+  /** 下拉单元格 */
+  if (cell.kind === 'select') {
+    return (
+      <td className={tdClassName}>
+        <select
+          className={className}
+          value={cell.value}
+          data-row={rowIndex}
+          data-col={colIndex}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          onChange={handleSelectChange}
+        >
+          {/* 可选：给一个空选项 */}
+          <option value="" />
+          {cell.options?.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </td>
+    );
+  }
+
+  /** 金额单元格（默认走 amount） */
+  return (
+    <td className={tdClassName}>
+      <input
+        className={className}
+        type="text"
+        inputMode="decimal"
+        value={cell.value}
+        data-row={rowIndex}
+        data-col={colIndex}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        onChange={handleAmountChange}
+      />
+    </td>
+  );
+};
+
+export default EnterTableCell;
