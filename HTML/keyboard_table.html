@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>键盘友好型表格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        td {
+            padding: 0;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        td input,
+        td select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid transparent;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        td input:focus,
+        td select:focus {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        td input[type="number"] {
+            text-align: right;
+        }
+
+        tfoot {
+            background: #e9ecef;
+            font-weight: 600;
+        }
+
+        tfoot td {
+            padding: 12px;
+            color: #495057;
+        }
+
+        .sum-cell {
+            text-align: right;
+            font-size: 15px;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .output {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .output h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .output pre {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .tip {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffc107;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 键盘友好型可编辑表格</h1>
+        
+        <div class="tip">
+            💡 <strong>使用提示：</strong> 在单元格内按 <kbd>Enter</kbd> 跳转到下一个单元格，最后一列按 <kbd>Enter</kbd> 自动新增行 | 数字列自动千分位显示 | 下拉框自动展开
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="addRow()">➕ 添加行</button>
+            <button class="btn btn-success" onclick="exportData()">📤 导出数据</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+                <tfoot id="tableFoot"></tfoot>
+            </table>
+        </div>
+
+        <div class="output">
+            <h3>📋 当前数据（JSON格式）</h3>
+            <pre id="jsonOutput">[]</pre>
+        </div>
+    </div>
+
+    <script>
+        // 表格配置
+        const columns = [
+            { label: '姓名', key: 'name', type: 'text' },
+            { label: '金额1', key: 'amount1', type: 'number', sum: true },
+            { label: '金额2', key: 'amount2', type: 'number', sum: true },
+            { label: '部门', key: 'department', type: 'select', options: ['研发部', '市场部', '人事部', '财务部'] },
+            { label: '职位', key: 'position', type: 'text' },
+            { label: '金额3', key: 'amount3', type: 'number', sum: true },
+            { label: '状态', key: 'status', type: 'select', options: ['在职', '离职', '试用期'] }
+        ];
+
+        // 数据存储
+        let tableData = [];
+
+        // 初始化表格
+        function initTable() {
+            renderTableHead();
+            addRow();
+            addRow();
+        }
+
+        // 渲染表头
+        function renderTableHead() {
+            const thead = document.getElementById('tableHead');
+            let html = '<tr>';
+            columns.forEach(col => {
+                html += `<th>${col.label}</th>`;
+            });
+            html += '<th style="width: 100px;">操作</th></tr>';
+            thead.innerHTML = html;
+        }
+
+        // 添加行
+        function addRow(data = {}) {
+            const rowIndex = tableData.length;
+            const rowData = {};
+            
+            columns.forEach(col => {
+                rowData[col.key] = data[col.key] || '';
+            });
+            
+            tableData.push(rowData);
+            renderTable();
+        }
+
+        // 删除行
+        function deleteRow(index) {
+            if (tableData.length <= 1) {
+                alert('至少保留一行数据');
+                return;
+            }
+            tableData.splice(index, 1);
+            renderTable();
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            
+            if (tableData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="' + (columns.length + 1) + '" class="empty-state">暂无数据</td></tr>';
+                updateJsonOutput();
+                return;
+            }
+
+            let html = '';
+            tableData.forEach((row, rowIndex) => {
+                html += '<tr>';
+                columns.forEach((col, colIndex) => {
+                    html += '<td>';
+                    html += createInputElement(col, rowIndex, colIndex);
+                    html += '</td>';
+                });
+                html += `<td style="text-align: center;">
+                    <button class="delete-btn" onclick="deleteRow(${rowIndex})">删除</button>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            tbody.innerHTML = html;
+            renderFooter();
+            attachEventListeners();
+            updateJsonOutput();
+        }
+
+        // 创建输入元素
+        function createInputElement(col, rowIndex, colIndex) {
+            const value = tableData[rowIndex][col.key] || '';
+            const id = `cell-${rowIndex}-${colIndex}`;
+            
+            if (col.type === 'select') {
+                let options = '<option value="">请选择</option>';
+                col.options.forEach(opt => {
+                    options += `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`;
+                });
+                return `<select id="${id}" data-row="${rowIndex}" data-col="${colIndex}">${options}</select>`;
+            } else if (col.type === 'number') {
+                const displayValue = value ? formatNumber(value) : '';
+                return `<input type="text" id="${id}" value="${displayValue}" data-row="${rowIndex}" data-col="${colIndex}" data-raw-value="${value}" placeholder="0.00" class="number-input">`;
+            } else {
+                return `<input type="text" id="${id}" value="${value}" data-row="${rowIndex}" data-col="${colIndex}" placeholder="输入${col.label}">`;
+            }
+        }
+
+        // 格式化数字为千分位
+        function formatNumber(num) {
+            if (!num && num !== 0) return '';
+            const number = parseFloat(num);
+            if (isNaN(number)) return '';
+            return number.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // 解析千分位数字
+        function parseFormattedNumber(str) {
+            if (!str) return '';
+            return str.replace(/,/g, '');
+        }
+
+        // 渲染汇总行
+        function renderFooter() {
+            const tfoot = document.getElementById('tableFoot');
+            let html = '<tr>';
+            
+            columns.forEach(col => {
+                if (col.sum && col.type === 'number') {
+                    const sum = tableData.reduce((total, row) => {
+                        const value = parseFloat(row[col.key]) || 0;
+                        return total + value;
+                    }, 0);
+                    html += `<td class="sum-cell">合计: ${formatNumber(sum)}</td>`;
+                } else {
+                    html += '<td></td>';
+                }
+            });
+            
+            html += '<td></td></tr>';
+            tfoot.innerHTML = html;
+        }
+
+        // 附加事件监听
+        function attachEventListeners() {
+            const inputs = document.querySelectorAll('#tableBody input, #tableBody select');
+            
+            inputs.forEach(input => {
+                // 下拉选择框获得焦点时自动展开
+                if (input.tagName === 'SELECT') {
+                    input.addEventListener('focus', function() {
+                        // 触发点击事件来展开下拉框
+                        setTimeout(() => {
+                            if (document.activeElement === this) {
+                                this.size = Math.min(this.options.length, 10);
+                            }
+                        }, 0);
+                    });
+
+                    input.addEventListener('blur', function() {
+                        this.size = 1;
+                    });
+
+                    input.addEventListener('change', function() {
+                        const rowIndex = parseInt(this.dataset.row);
+                        const colIndex = parseInt(this.dataset.col);
+                        tableData[rowIndex][columns[colIndex].key] = this.value;
+                        this.size = 1;
+                        updateJsonOutput();
+                    });
+                }
+
+                // 数字输入框特殊处理
+                if (input.classList.contains('number-input')) {
+                    // 获得焦点时显示原始数值
+                    input.addEventListener('focus', function() {
+                        const rawValue = this.dataset.rawValue || '';
+                        this.value = rawValue;
+                        this.select();
+                    });
+
+                    // 失去焦点时格式化为千分位
+                    input.addEventListener('blur', function() {
+                        const rawValue = parseFormattedNumber(this.value);
+                        this.dataset.rawValue = rawValue;
+                        this.value = rawValue ? formatNumber(rawValue) : '';
+                        
+                        const rowIndex = parseInt(this.dataset.row);
+                        const colIndex = parseInt(this.dataset.col);
+                        tableData[rowIndex][columns[colIndex].key] = rawValue;
+                        renderFooter();
+                        updateJsonOutput();
+                    });
+
+                    // 输入时只允许数字和小数点
+                    input.addEventListener('input', function(e) {
+                        let value = this.value;
+                        // 移除非数字字符（保留数字、小数点、负号）
+                        value = value.replace(/[^\d.-]/g, '');
+                        // 确保只有一个小数点
+                        const parts = value.split('.');
+                        if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                        }
+                        // 确保负号只在开头
+                        if (value.indexOf('-') > 0) {
+                            value = value.replace(/-/g, '');
+                        }
+                        this.value = value;
+                    });
+                }
+
+                // 普通文本输入框
+                if (input.type === 'text' && !input.classList.contains('number-input')) {
+                    input.addEventListener('input', function() {
+                        const rowIndex = parseInt(this.dataset.row);
+                        const colIndex = parseInt(this.dataset.col);
+                        tableData[rowIndex][columns[colIndex].key] = this.value;
+                        updateJsonOutput();
+                    });
+                }
+
+                // 回车键事件
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // 如果是下拉框且已展开，先收起
+                        if (this.tagName === 'SELECT' && this.size > 1) {
+                            this.size = 1;
+                        }
+                        handleEnterKey(this);
+                    }
+                });
+            });
+        }
+
+        // 处理回车键
+        function handleEnterKey(currentElement) {
+            const rowIndex = parseInt(currentElement.dataset.row);
+            const colIndex = parseInt(currentElement.dataset.col);
+            
+            // 如果是最后一列
+            if (colIndex === columns.length - 1) {
+                // 如果是最后一行，添加新行
+                if (rowIndex === tableData.length - 1) {
+                    addRow();
+                    // 等待DOM更新后聚焦到新行第一列
+                    setTimeout(() => {
+                        const nextInput = document.getElementById(`cell-${rowIndex + 1}-0`);
+                        if (nextInput) nextInput.focus();
+                    }, 0);
+                } else {
+                    // 跳转到下一行第一列
+                    const nextInput = document.getElementById(`cell-${rowIndex + 1}-0`);
+                    if (nextInput) nextInput.focus();
+                }
+            } else {
+                // 跳转到右边下一列
+                const nextInput = document.getElementById(`cell-${rowIndex}-${colIndex + 1}`);
+                if (nextInput) nextInput.focus();
+            }
+        }
+
+        // 更新JSON输出
+        function updateJsonOutput() {
+            const output = document.getElementById('jsonOutput');
+            output.textContent = JSON.stringify(tableData, null, 2);
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(tableData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'table_data_' + new Date().getTime() + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', initTable);
+    </script>
+</body>
+</html>
