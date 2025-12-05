@@ -98,7 +98,7 @@ return (
 
 ================TableRow UI 部分==============
 return (
-    <>
+    <div className={style.gridRow}>
         {tbHeaderArg.showIndex && (
             <div className={`${style.selfTd} ${style.gridCell} ${style.indexCell}`}>
                 <div className={style.operation_btn_wrapper}>
@@ -194,7 +194,7 @@ return (
                 </div>
             </div>
         ))}
-    </>
+    </div>
 );
 
 
@@ -214,15 +214,21 @@ return (
 /* Header 区域 */
 .gridHeader {
     display: grid;
-    grid-auto-flow: dense; /* 允许单元格自动填充 */
+    grid-auto-flow: dense;
     grid-template-columns: 
         60px      /* No. 序号列 */
         repeat(auto-fit, minmax(80px, 1fr));
     grid-auto-rows: minmax(25px, auto);
 }
 
-/* Body 区域 */
+/* Body 区域 - 使用 flex 布局让每行独立 */
 .gridBody {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 每一行数据 */
+.gridRow {
     display: grid;
     grid-template-columns: 
         60px      /* No. 序号列 */
@@ -253,18 +259,12 @@ return (
     font-size: 12px;
     text-align: center;
     border: solid 1px #555;
-    border-bottom: none; /* header 底部边框由 body 提供 */
     box-sizing: border-box;
     white-space: nowrap;
     background-color: #e8e8e8;
     font-weight: 600;
     padding: 4px 8px;
     word-break: break-word;
-}
-
-/* header 最后一行需要底部边框 */
-.gridHeader > .selfTh:nth-last-child(-n+20) {
-    border-bottom: solid 1px #555;
 }
 
 .selfTd {
@@ -281,14 +281,14 @@ return (
     padding: 0;
 }
 
-/* body 第一行需要顶部边框 */
-.gridBody > .selfTd:nth-child(-n+20) {
+/* gridRow 第一行的 td 需要顶部边框 */
+.gridBody .gridRow:first-child .selfTd {
     border-top: solid 1px #555;
 }
 
-/* footer 单元格 */
-.gridFooter > .selfTd {
-    border-top: solid 1px #555;
+/* gridRow 中每行的左侧边框处理 */
+.gridRow .selfTd:first-child {
+    border-left: solid 1px #555;
 }
 
 .indexCell {
