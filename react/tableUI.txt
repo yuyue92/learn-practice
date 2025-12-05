@@ -207,33 +207,37 @@ return (
 
 .table_list_style {
     margin: 3px;
+    display: flex;
+    flex-direction: column;
+    min-width: max-content;
+}
+
+/* Header 区域 */
+.gridHeader {
     display: grid;
-    /* 使用 auto-fill 支持动态列数 */
+    grid-auto-flow: dense; /* 允许单元格自动填充 */
     grid-template-columns: 
         60px      /* No. 序号列 */
-        repeat(auto-fill, minmax(80px, 1fr)); /* 其他列自适应 */
+        repeat(auto-fit, minmax(80px, 1fr));
     grid-auto-rows: minmax(25px, auto);
-    min-width: max-content;
-    width: fit-content;
 }
 
-/* Header */
-.gridHeader {
-    display: contents;
-}
-
-/* Body */
+/* Body 区域 */
 .gridBody {
-    display: contents;
+    display: grid;
+    grid-template-columns: 
+        60px      /* No. 序号列 */
+        repeat(auto-fit, minmax(80px, 1fr));
+    grid-auto-rows: minmax(28px, auto);
 }
 
-.gridBody > * {
-    display: contents;
-}
-
-/* Footer */
+/* Footer 区域 */
 .gridFooter {
-    display: contents;
+    display: grid;
+    grid-template-columns: 
+        60px      /* No. 序号列 */
+        repeat(auto-fit, minmax(80px, 1fr));
+    grid-auto-rows: minmax(28px, auto);
 }
 
 .gridCell {
@@ -250,12 +254,18 @@ return (
     font-size: 12px;
     text-align: center;
     border: solid 1px #555;
+    border-bottom: none; /* header 底部边框由 body 提供 */
     box-sizing: border-box;
     white-space: nowrap;
     background-color: #e8e8e8;
     font-weight: 600;
     padding: 4px 8px;
     word-break: break-word;
+}
+
+/* header 最后一行需要底部边框 */
+.gridHeader > .selfTh:nth-last-child(-n+20) {
+    border-bottom: solid 1px #555;
 }
 
 .selfTd {
@@ -266,9 +276,20 @@ return (
     text-align: center;
     overflow: visible;
     border: solid 1px #555;
+    border-top: none; /* 避免重复边框 */
     background-color: #fff;
     box-sizing: border-box;
     padding: 0;
+}
+
+/* body 第一行需要顶部边框 */
+.gridBody > .selfTd:nth-child(-n+20) {
+    border-top: solid 1px #555;
+}
+
+/* footer 单元格 */
+.gridFooter > .selfTd {
+    border-top: solid 1px #555;
 }
 
 .indexCell {
@@ -332,6 +353,7 @@ return (
 .selfInput:focus {
     outline: 2px solid #4A90E2;
     outline-offset: -2px;
+    z-index: 1;
 }
 
 .selfInput:disabled {
@@ -355,6 +377,7 @@ return (
 .selfSelect:focus {
     outline: 2px solid #4A90E2;
     outline-offset: -2px;
+    z-index: 1;
 }
 
 .selfSelect:disabled {
