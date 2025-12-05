@@ -1,0 +1,370 @@
+EnterTableList UI 部分
+// ==================== Render ====================
+return (
+    <div className={style.tbContainer}>
+        <div className={style.table_list_style}>
+            {/* Header */}
+            <div className={style.gridHeader}>
+                {tbHeaderArg?.theadList?.map((rowItem, rowIndex) => (
+                    <div key={rowItem.id} className={style.gridHeaderRow}>
+                        {tbHeaderArg.showIndex && rowIndex === 0 && (
+                            <div
+                                key={rowItem.id + '_index'}
+                                className={`${style.selfTh} ${style.gridCell}`}
+                                style={{ gridRow: `span ${tbHeaderArg.showRowSpan}` }}
+                            >
+                                <div className={style.operation_btn_wrapper}>
+                                    <button
+                                        className={`${style.operation_btn} ${style.header_add_btn}`}
+                                        onClick={handleInsertZeroRow}
+                                    >
+                                        +
+                                    </button>
+                                    <span>{tbHeaderArg.titleIndex}</span>
+                                </div>
+                            </div>
+                        )}
+                        {rowItem.rowList.map((colItem) => (
+                            <div
+                                key={colItem.id}
+                                className={`${style.selfTh} ${style.gridCell}`}
+                                style={{
+                                    gridRow: colItem.rowSpan > 1 ? `span ${colItem.rowSpan}` : undefined,
+                                    gridColumn: colItem.colSpan > 1 ? `span ${colItem.colSpan}` : undefined
+                                }}
+                            >
+                                {colItem.title}
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+
+            {/* Body */}
+            <div className={style.gridBody}>
+                {dataList.map((rowItem, rowIndex) => (
+                    <TableRow
+                        key={rowItem[0].uuid}
+                        rowItem={rowItem}
+                        rowIndex={rowIndex}
+                        tbHeaderArg={tbHeaderArg}
+                        versionCheckedInfor={versionCheckedInfor.current}
+                        registerInput={registerInput}
+                        onInsertRow={handleInsertRow}
+                        onDeleteRow={handleDeleteRow}
+                        onInputChange={handleInputChange}
+                        onSelectFocus={handleSelectFocus}
+                        onSelectChange={handleSelectChange}
+                        onSelectClick={handleSelectClick}
+                        onSelectMouseDown={handleSelectMouseDown}
+                        onInputFocus={handleInputFocus}
+                        onInputBlur={handleInputBlur}
+                        onInputKeydown={handleInputKeydown}
+                        onVersionClick={handleVersionClick}
+                    />
+                ))}
+            </div>
+
+            {/* Footer */}
+            <div className={style.gridFooter}>
+                <div className={style.gridFooterRow}>
+                    {footerState.map((tdItem) => (
+                        <div
+                            key={tdItem.id}
+                            className={`${style.selfTd} ${style.gridCell} ${
+                                tdItem.title.length > 0
+                                    ? style.selfFooterTitle
+                                    : style.selfInputReadOnly
+                            }`}
+                            style={{
+                                gridRow: tdItem.rowSpan > 1 ? `span ${tdItem.rowSpan}` : undefined,
+                                gridColumn: tdItem.colSpan > 1 ? `span ${tdItem.colSpan}` : undefined
+                            }}
+                        >
+                            {tdItem.title.length > 0 ? tdItem.title : tdItem.value}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+
+================TableRow UI 部分==============
+return (
+    <div className={style.gridRow}>
+        {tbHeaderArg.showIndex && (
+            <div className={`${style.selfTd} ${style.gridCell}`}>
+                <div className={style.operation_btn_wrapper}>
+                    <button
+                        className={style.operation_btn}
+                        onClick={() => onInsertRow(rowIndex)}
+                    >
+                        +
+                    </button>
+                    <button
+                        className={style.operation_btn}
+                        onClick={() => onDeleteRow(rowIndex)}
+                    >
+                        -
+                    </button>
+                    <span>{rowIndex + 1}</span>
+                </div>
+            </div>
+        )}
+
+        {rowItem.map((item) => (
+            <div
+                key={`td_${rowIndex}_${item.columnIndex}`}
+                className={`${style.selfTd} ${style.gridCell} ${
+                    item.required && !item.value && item.type !== 'select'
+                        ? style.selfInputRequire
+                        : ''
+                }`}
+            >
+                {
+                    <div
+                        className={`${style.selfInputContainer} ${
+                            versionCheckedInfor[item.rowIndex]?.[item.columnIndex] === 1
+                                ? style.selfInputCheckSign
+                                : ''
+                        }`}
+                    >
+                        {item.type === 'select' ? (
+                            <select
+                                ref={registerInput(`input_${item.rowIndex}_${item.columnIndex}`)}
+                                data-testid={`${item.key}-${rowIndex}`}
+                                name={item.key}
+                                value={item.value}
+                                disabled={item.disable}
+                                className={`${style.selfSelect} ${
+                                    item.versionError || item.valueError ? style.selfInputVersionError : ''
+                                } `}
+                                onFocus={(e) => onSelectFocus(e, item, item.rowIndex, item.columnIndex)}
+                                onChange={(e) => onSelectChange(e, item, item.rowIndex, item.columnIndex)}
+                                onClick={(e) => onSelectClick(e, item, item.rowIndex, item.columnIndex)}
+                                onMouseDown={onSelectMouseDown}
+                            >
+                                {item.options?.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                ref={registerInput(`input_${item.rowIndex}_${item.columnIndex}`)}
+                                autoComplete="off"
+                                data-testid={`${item.key}-${rowIndex}`}
+                                name={item.key}
+                                value={item.value}
+                                placeholder={item.placeholder}
+                                disabled={item.disable || item.key === 'Total'}
+                                className={`${style.selfInput} ${
+                                    item.format === 'money' ? style.selfInputMoney : ''
+                                } ${
+                                    item.versionError || item.valueError
+                                        ? style.selfInputVersionError
+                                        : ''
+                                }`}
+                                onFocus={(e) => onInputFocus(e, item, item.rowIndex, item.columnIndex)}
+                                onKeyDown={(e) => onInputKeydown(e, item, item.rowIndex, item.columnIndex)}
+                                onChange={(e) => onInputChange(e, item, item.rowIndex, item.columnIndex)}
+                                onBlur={(e) => onInputBlur(e, item, item.rowIndex, item.columnIndex)}
+                            />
+                        )}
+
+                        {item.versionError && item.showList && (
+                            <ul className={style.selfUL}>
+                                {item.versionList?.map((versionItem) => (
+                                    <li
+                                        key={versionItem.id}
+                                        onClick={(e) => onVersionClick(e, item)}
+                                    >
+                                        {versionItem.txt}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                }
+            </div>
+        ))}
+    </div>
+);
+
+
+==============CSS 样式替换部分===============
+
+.tbContainer {
+    height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
+.table_list_style {
+    margin: 3px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Grid 布局 - 自动列数 */
+.gridHeader,
+.gridBody,
+.gridFooter {
+    display: contents;
+}
+
+.gridHeaderRow,
+.gridRow,
+.gridFooterRow {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(80px, 1fr);
+}
+
+.gridCell {
+    min-width: 80px;
+}
+
+.selfTh {
+    width: 100px;
+    min-width: 80px;
+    height: 25px;
+    font-size: 12px;
+    vertical-align: middle;
+    text-align: center;
+    border: solid 1px #555;
+    box-sizing: border-box;
+    white-space: pre-line;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selfTd {
+    max-height: 28px;
+    line-height: 28px;
+    text-align: center;
+    overflow: visible;
+    border: solid 1px #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selfFooterTitle {
+    text-align: right;
+    padding-right: 20px;
+    justify-content: flex-end;
+}
+
+.selfInputContainer {
+    position: relative;
+    top: -1px;
+    display: inline-block;
+    border: none;
+    box-sizing: border-box;
+    max-height: 28px;
+    width: 100%;
+}
+
+.selfInputCheckSign::before {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 10px 0 0;
+    border-color: #4d804d transparent transparent transparent;
+    z-index: 1;
+}
+
+.selfInputReadOnly {
+    background-color: #f2f2f2;
+    text-align: right;
+    padding-right: 5px;
+    justify-content: flex-end;
+}
+
+.selfInput {
+    height: 26px;
+    line-height: 26px;
+    margin: 0;
+    width: calc(100% - 4px);
+    font-size: 12px;
+    border: none;
+}
+
+.selfSelect {
+    height: 26px;
+    line-height: 26px;
+    margin: 0;
+    width: 100%;
+    font-size: 12px;
+    border: none;
+}
+
+.selfInputVersionError:not(:placeholder-shown) {
+    color: red;
+}
+
+.selfInputRequire {
+    position: relative;
+}
+
+.selfInputRequire::after {
+    content: "*";
+    position: absolute;
+    top: 0;
+    right: 5px;
+    color: red;
+}
+
+.selfInputMoney {
+    text-align: right;
+    padding-right: 5px;
+    width: calc(100% - 7px);
+}
+
+.selfUL {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+.selfUL li {
+    cursor: pointer;
+    border-bottom: solid 1px #f0f0f0;
+}
+
+.operation_btn_wrapper {
+    display: flex;
+    gap: 4px;
+    min-width: 60px;
+    margin: 0 2px;
+    line-height: 26px;
+}
+
+.operation_btn {
+    margin-top: 5px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+}
