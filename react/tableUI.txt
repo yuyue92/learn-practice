@@ -1,6 +1,5 @@
-EnterTableList UI 部分
-// ==================== Render ====================
-// ==================== Render ====================
+
+// ====================EnterTableList UI 部分 Render ====================
 return (
     <div className={style.tbContainer}>
         <div className={style.table_list_style}>
