@@ -1,26 +1,29 @@
 Step 1: 在组件顶部添加（import 下方）
 // ========== 新增：分组相关状态和函数 ==========
+// ========== 新增：分组相关状态和函数 ==========
 const [collapsedGroups, setCollapsedGroups] = useState(new Set());
 
-const processDataWithGroupMarkers = (data) => {
+// 计算每行的分组信息（仅用于渲染判断）
+const getGroupInfo = useMemo(() => {
     const seenPageNos = new Set();
-    return data.map((rowItem, index) => {
+    const groupInfoMap = new Map(); // 存储每个索引的分组信息
+    
+    dataList.forEach((rowItem, index) => {
         const pageNo = rowItem[0]?.pageNo;
         const isGroupStart = !seenPageNos.has(pageNo);
-        if (isGroupStart) seenPageNos.add(pageNo);
-        return {
-            rowData: rowItem,
-            pageNo: pageNo,
-            isGroupStart: isGroupStart,
-            originalIndex: index
-        };
+        
+        if (isGroupStart) {
+            seenPageNos.add(pageNo);
+        }
+        
+        groupInfoMap.set(index, {
+            pageNo,
+            isGroupStart
+        });
     });
-};
-
-const processedDataList = useMemo(() => 
-    processDataWithGroupMarkers(dataList), 
-    [dataList]
-);
+    
+    return groupInfoMap;
+}, [dataList]);
 
 const toggleGroup = (pageNo) => {
     setCollapsedGroups(prev => {
@@ -65,13 +68,17 @@ const GroupHeaderRow = ({ pageNo, isCollapsed, onToggle, tbHeaderArg }) => {
 
 Step 3: 替换 Body 部分的渲染代码
 {/* Body */}
+{/* Body */}
 <div className={style.gridBody}>
-    {processedDataList.map((item) => {
-        const { rowData, pageNo, isGroupStart, originalIndex } = item;
+    {dataList.map((rowItem, rowIndex) => {
+        // 获取当前行的分组信息
+        const groupInfo = getGroupInfo.get(rowIndex);
+        const { pageNo, isGroupStart } = groupInfo || {};
         const isCollapsed = collapsedGroups.has(pageNo);
         
         return (
-            <React.Fragment key={`row-fragment-${originalIndex}`}>
+            <React.Fragment key={`row-fragment-${rowIndex}`}>
+                {/* 如果是分组的第一行，先渲染分组头 */}
                 {isGroupStart && (
                     <GroupHeaderRow
                         pageNo={pageNo}
@@ -81,11 +88,12 @@ Step 3: 替换 Body 部分的渲染代码
                     />
                 )}
                 
+                {/* 根据折叠状态决定是否渲染数据行 */}
                 {!isCollapsed && (
                     <TableRow
-                        key={rowData[0].uuid}
-                        rowItem={rowData}
-                        rowIndex={originalIndex}
+                        key={rowItem[0].uuid}
+                        rowItem={rowItem}
+                        rowIndex={rowIndex}  {/* ⚠️ 关键：使用原始的 rowIndex */}
                         tbHeaderArg={tbHeaderArg}
                         versionCheckedInfor={versionCheckedInfor.current}
                         registerInput={registerInput}
