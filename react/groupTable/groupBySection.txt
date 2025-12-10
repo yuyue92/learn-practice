@@ -1,0 +1,161 @@
+Step 1: 在组件顶部添加（import 下方）
+// ========== 新增：分组相关状态和函数 ==========
+const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+
+const processDataWithGroupMarkers = (data) => {
+    const seenPageNos = new Set();
+    return data.map((rowItem, index) => {
+        const pageNo = rowItem[0]?.pageNo;
+        const isGroupStart = !seenPageNos.has(pageNo);
+        if (isGroupStart) seenPageNos.add(pageNo);
+        return {
+            rowData: rowItem,
+            pageNo: pageNo,
+            isGroupStart: isGroupStart,
+            originalIndex: index
+        };
+    });
+};
+
+const processedDataList = useMemo(() => 
+    processDataWithGroupMarkers(dataList), 
+    [dataList]
+);
+
+const toggleGroup = (pageNo) => {
+    setCollapsedGroups(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(pageNo)) {
+            newSet.delete(pageNo);
+        } else {
+            newSet.add(pageNo);
+        }
+        return newSet;
+    });
+};
+
+
+Step 2: 在 return 语句前添加组件定义
+// ========== 新增：分组头行组件 ==========
+const GroupHeaderRow = ({ pageNo, isCollapsed, onToggle, tbHeaderArg }) => {
+    return (
+        <div className={`${style.gridRow} ${style.groupHeaderRow}`}>
+            {tbHeaderArg.showIndex && (
+                <div className={`${style.selfTd} ${style.gridCell} ${style.groupHeaderCell}`}>
+                    <button
+                        className={style.groupToggleBtn}
+                        onClick={() => onToggle(pageNo)}
+                    >
+                        {isCollapsed ? '▶' : '▼'}
+                    </button>
+                </div>
+            )}
+            <div 
+                className={`${style.selfTd} ${style.gridCell} ${style.groupHeaderCell}`}
+                style={{ 
+                    gridColumn: tbHeaderArg.showIndex ? '2 / -1' : '1 / -1' 
+                }}
+            >
+                <span className={style.groupTitle}>Page {pageNo}</span>
+            </div>
+        </div>
+    );
+};
+
+
+Step 3: 替换 Body 部分的渲染代码
+{/* Body */}
+<div className={style.gridBody}>
+    {processedDataList.map((item) => {
+        const { rowData, pageNo, isGroupStart, originalIndex } = item;
+        const isCollapsed = collapsedGroups.has(pageNo);
+        
+        return (
+            <React.Fragment key={`row-fragment-${originalIndex}`}>
+                {isGroupStart && (
+                    <GroupHeaderRow
+                        pageNo={pageNo}
+                        isCollapsed={isCollapsed}
+                        onToggle={toggleGroup}
+                        tbHeaderArg={tbHeaderArg}
+                    />
+                )}
+                
+                {!isCollapsed && (
+                    <TableRow
+                        key={rowData[0].uuid}
+                        rowItem={rowData}
+                        rowIndex={originalIndex}
+                        tbHeaderArg={tbHeaderArg}
+                        versionCheckedInfor={versionCheckedInfor.current}
+                        registerInput={registerInput}
+                        onInsertRow={handleInsertRow}
+                        onDeleteRow={handleDeleteRow}
+                        onInputChange={handleInputChange}
+                        onSelectFocus={handleSelectFocus}
+                        onSelectChange={handleSelectChange}
+                        onSelectClick={handleSelectClick}
+                        onSelectMouseDown={handleSelectMouseDown}
+                        onInputFocus={handleInputFocus}
+                        onInputBlur={handleInputBlur}
+                        onInputKeydown={handleInputKeydown}
+                        onVersionClick={handleVersionClick}
+                    />
+                )}
+            </React.Fragment>
+        );
+    })}
+</div>
+
+
+Step 4: 在 CSS 文件末尾添加样式
+/* ========== 新增：分组头样式 ========== */
+.groupHeaderRow {
+    background-color: #f5f5f5;
+    min-height: 32px !important;
+}
+
+.groupHeaderRow .selfTd {
+    background-color: #f5f5f5;
+    border-top: 2px solid #666;
+}
+
+.groupHeaderCell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px 12px;
+    font-weight: 600;
+}
+
+.groupToggleBtn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    border: 1px solid #999;
+    background-color: #fff;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0;
+    transition: all 0.2s;
+    color: #555;
+}
+
+.groupToggleBtn:hover {
+    background-color: #e8e8e8;
+    border-color: #666;
+}
+
+.groupToggleBtn:active {
+    transform: scale(0.95);
+}
+
+.groupTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-left: 8px;
+}
