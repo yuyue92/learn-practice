@@ -1,0 +1,50 @@
+/* ========== 新增：分组头样式 ========== */
+.groupHeaderRow {
+    background-color: #f5f5f5;
+    min-height: 32px !important;
+}
+
+.groupHeaderRow .selfTd {
+    background-color: #f5f5f5;
+    border-top: 2px solid #666;
+}
+
+.groupHeaderCell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px 12px;
+    font-weight: 600;
+}
+
+.groupToggleBtn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    border: 1px solid #999;
+    background-color: #fff;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0;
+    transition: all 0.2s;
+    color: #555;
+}
+
+.groupToggleBtn:hover {
+    background-color: #e8e8e8;
+    border-color: #666;
+}
+
+.groupToggleBtn:active {
+    transform: scale(0.95);
+}
+
+.groupTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-left: 8px;
+}
