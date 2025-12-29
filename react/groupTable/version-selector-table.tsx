@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 const VersionSelector = ({ 
   value1 = "版本1", 
   value2 = "版本2",
-  version1Data = null, // 新增：{ header: ['列1', '列2'], data: [[值1, 值2], ...] }
-  version2Data = null, // 新增：{ header: ['列1', '列2'], data: [[值1, 值2], ...] }
+  version1Data = null, // { header: ['列1', '列2'], data: [[值1, 值2], ...] }
+  version2Data = null, // { header: ['列1', '列2'], data: [[值1, 值2], ...] }
   inputPlaceholder = "或输入自定义值",
   onSave 
 }) => {
@@ -32,7 +32,7 @@ const VersionSelector = ({
       onSave(finalValue);
     }
     
-    setIsConfirmed(true); // 新增：标记为已确认
+    setIsConfirmed(true);
     handleClose();
   };
 
@@ -44,7 +44,7 @@ const VersionSelector = ({
       width: '28px',
       height: '28px',
       borderRadius: '50%',
-      backgroundColor: '#f44336', // 红色，已确认后会变绿色
+      backgroundColor: '#f44336',
       color: 'white',
       border: 'none',
       cursor: 'pointer',
@@ -58,15 +58,15 @@ const VersionSelector = ({
       transition: 'all 0.2s',
       zIndex: 10,
     },
-    iconButtonConfirmed: { // 新增：已确认状态样式
+    iconButtonConfirmed: {
       backgroundColor: '#4caf50',
       boxShadow: '0 2px 8px rgba(76, 175, 80, 0.4)',
     },
     iconButtonHover: {
-      backgroundColor: '#d32f2f', // 红色悬停
+      backgroundColor: '#d32f2f',
       transform: 'scale(1.1)',
     },
-    iconButtonConfirmedHover: { // 新增：绿色悬停
+    iconButtonConfirmedHover: {
       backgroundColor: '#388e3c',
       transform: 'scale(1.1)',
     },
@@ -86,8 +86,8 @@ const VersionSelector = ({
       backgroundColor: 'white',
       borderRadius: '8px',
       width: '90%',
-      maxWidth: '600px', // 增加最大宽度以适应表格
-      maxHeight: '80vh', // 限制最大高度
+      maxWidth: '600px',
+      maxHeight: '80vh',
       display: 'flex',
       flexDirection: 'column',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
@@ -101,7 +101,7 @@ const VersionSelector = ({
     },
     dialogContent: {
       padding: '24px',
-      overflowY: 'auto', // 新增：内容区可滚动
+      overflowY: 'auto',
       flex: 1,
     },
     radioGroup: {
@@ -111,7 +111,7 @@ const VersionSelector = ({
     },
     radioOption: {
       display: 'flex',
-      alignItems: 'flex-start', // 改为顶部对齐以适应表格
+      alignItems: 'flex-start',
       cursor: 'pointer',
       marginBottom: '12px',
     },
@@ -119,9 +119,9 @@ const VersionSelector = ({
       width: '18px',
       height: '18px',
       marginRight: '10px',
-      marginTop: '2px', // 新增：与内容顶部对齐
+      marginTop: '2px',
       cursor: 'pointer',
-      flexShrink: 0, // 新增：防止单选框被压缩
+      flexShrink: 0,
     },
     input: {
       width: '100%',
@@ -166,7 +166,6 @@ const VersionSelector = ({
       backgroundColor: '#ccc',
       cursor: 'not-allowed',
     },
-    // 新增：表格样式
     table: {
       width: '100%',
       borderCollapse: 'collapse',
@@ -194,7 +193,7 @@ const VersionSelector = ({
 
   const [isHovered, setIsHovered] = useState(false);
 
-  // 新增：渲染版本内容（字符串或表格）
+  // 渲染版本内容（字符串或表格）
   const renderVersionContent = (value, versionData) => {
     if (versionData && versionData.header && versionData.data) {
       // 渲染表格
@@ -236,12 +235,12 @@ const VersionSelector = ({
         onMouseLeave={() => setIsHovered(false)}
         style={{
           ...styles.iconButton,
-          ...(isConfirmed ? styles.iconButtonConfirmed : {}), // 已确认则应用绿色样式
+          ...(isConfirmed ? styles.iconButtonConfirmed : {}),
           ...(isHovered ? (isConfirmed ? styles.iconButtonConfirmedHover : styles.iconButtonHover) : {})
         }}
         title={isConfirmed ? "已确认版本" : "选择版本"}
       >
-        {isConfirmed ? '✓' : 'i'} {/* 已确认显示打勾，未确认显示i */}
+        {isConfirmed ? '✓' : 'i'}
       </button>
 
       {/* 弹框 */}
@@ -262,7 +261,7 @@ const VersionSelector = ({
                     onChange={(e) => setSelectedOption(e.target.value)}
                     style={styles.radio}
                   />
-                  <span>{value1}</span>
+                  {renderVersionContent(value1, version1Data)}
                 </label>
                 
                 {/* 版本2 */}
@@ -275,7 +274,7 @@ const VersionSelector = ({
                     onChange={(e) => setSelectedOption(e.target.value)}
                     style={styles.radio}
                   />
-                  <span>{value2}</span>
+                  {renderVersionContent(value2, version2Data)}
                 </label>
                 
                 {/* 自定义输入 */}
@@ -288,7 +287,7 @@ const VersionSelector = ({
                     onChange={(e) => setSelectedOption(e.target.value)}
                     style={styles.radio}
                   />
-                  <span>自定义</span>
+                  <span style={styles.versionContent}>自定义</span>
                 </label>
                 
                 {/* 输入框 */}
