@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>html5-new-attr-Document</title>
+</head>
+
+<body>
+    <h2>HTML5 新属性详解与应用</h2>
+    <div style="border: 1px solid black; padding: 11px;">
+        <span>1. Input类型新属性</span>
+        <!-- 电子邮件 -->
+        <input type="email" placeholder="请输入邮箱">
+
+        <!-- 网址 -->
+        <input type="url" placeholder="请输入网址">
+
+        <!-- 电话号码 -->
+        <input type="tel" placeholder="请输入电话">
+
+        <!-- 数字 -->
+        <input type="number" min="1" max="100" step="5">
+
+        <!-- 日期选择器 -->
+        <input type="date">
+        <input type="time">
+        <input type="datetime-local">
+        <input type="month">
+        <input type="week">
+
+        <!-- 颜色选择器 -->
+        <input type="color">
+
+        <!-- 范围滑块 -->
+        <input type="range" min="0" max="100" value="50">
+
+        <!-- 搜索框 -->
+        <input type="search" placeholder="搜索...">
+    </div>
+    <div style="border: 1px solid black; padding: 11px;">
+        <span>2. 表单验证属性</span>
+        <!-- required - 必填项 -->
+        <input type="text" required>
+
+        <!-- pattern - 正则验证 -->
+        <input type="text" pattern="[0-9]{6}" title="请输入6位数字">
+
+        <!-- minlength/maxlength - 长度限制 -->
+        <input type="text" minlength="3" maxlength="20">
+
+        <!-- min/max - 数值范围 -->
+        <input type="number" min="18" max="65">
+
+        <!-- step - 数值间隔 -->
+        <input type="number" step="0.5">
+
+        <!-- multiple - 允许多个值 -->
+        <input type="email" multiple>
+        <input type="file" multiple>
+    </div>
+    <div style="border: 1px solid black; padding: 11px;">
+        <span>3. 表单增强属性</span>
+        <!-- placeholder - 占位符 -->
+        <input type="text" placeholder="请输入用户名">
+
+        <!-- autofocus - 自动获取焦点 -->
+        <input type="text" autofocus>
+
+        <!-- autocomplete - 自动完成 -->
+        <input type="text" autocomplete="on">
+        <input type="email" autocomplete="email">
+        <input type="tel" autocomplete="tel">
+
+        <!-- disabled - 禁用 -->
+        <input type="text" disabled>
+
+        <!-- readonly - 只读 -->
+        <input type="text" readonly value="只读内容">
+
+        <!-- form - 关联表单（可在表单外） -->
+        <input type="text" form="myForm">
+
+        <!-- formaction - 提交到不同URL -->
+        <button type="submit" formaction="/alternate-url">提交到其他地址</button>
+
+        <!-- list - 关联数据列表 -->
+        <input type="text" list="browsers">
+        <datalist id="browsers">
+            <option value="Chrome">
+            <option value="Firefox">
+            <option value="Safari">
+        </datalist>
+    </div>
+    <div style="border: 1px solid black; padding: 11px;">
+        <span>智能表单</span>
+        <form>
+            <label for="email">邮箱：</label>
+            <input type="email" id="email" name="email" placeholder="example@email.com" required autocomplete="email"
+                pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+
+            <label for="phone">电话：</label>
+            <input type="tel" id="phone" name="phone" placeholder="13800138000" pattern="[0-9]{11}" inputmode="numeric"
+                required>
+
+            <label for="age">年龄：</label>
+            <input type="number" id="age" min="18" max="100" required>
+
+            <button type="submit">提交</button>
+        </form>
+    </div>
+    <div style="border: 1px solid black; padding: 11px;">
+        <span>案例2：可编辑的待办事项</span>
+        <div contenteditable="true" data-task-id="1" data-priority="high" spellcheck="true"
+            style="border: 1px solid #ccc; padding: 10px;">
+            编辑任务内容
+        </div>
+    </div>
+    <div style="border: 1px solid black; padding: 11px;">
+        <span>案例3：优化的媒体播放器</span>
+        <video controls preload="metadata" poster="thumbnail.jpg" width="100%" crossorigin="anonymous">
+            <source src="video.mp4" type="video/mp4">
+            <source src="video.webm" type="video/webm">
+            <track kind="subtitles" src="subtitles-zh.vtt" srclang="zh" label="中文字幕">
+            您的浏览器不支持视频标签。
+        </video>
+    </div>
+</body>
+
+</html>
