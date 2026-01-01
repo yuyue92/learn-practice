@@ -118,3 +118,48 @@
 </video>
 ```
 
+三、全局属性：
+- data-** 自定义数据属性：
+```
+<div 
+  data-user-id="12345"
+  data-user-name="张三"
+  data-role="admin"
+  data-created-at="2024-01-01">
+  用户信息
+</div>
+
+<script>
+  const div = document.querySelector('div');
+  console.log(div.dataset.userId);      // "12345"
+  console.log(div.dataset.userName);    // "张三"
+  console.log(div.dataset.role);        // "admin"
+</script>
+```
+- CSS中使用：
+```
+[data-role="admin"] {
+  background-color: gold;
+}
+
+div::after {
+  content: attr(data-user-name);
+}
+```
+- 2. contenteditable - 可编辑内容
+```
+<div contenteditable="true">
+  这段文字可以编辑
+</div>
+
+<p contenteditable="false">
+  这段文字不可编辑
+</p>
+
+<!-- 实际应用：简易富文本编辑器 -->
+<div 
+  contenteditable="true" 
+  style="border: 1px solid #ccc; padding: 10px; min-height: 200px;">
+  开始输入内容...
+</div>
+```
