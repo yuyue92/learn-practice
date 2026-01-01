@@ -146,7 +146,7 @@ div::after {
   content: attr(data-user-name);
 }
 ```
-- 2. contenteditable - 可编辑内容
+- contenteditable - 可编辑内容
 ```
 <div contenteditable="true">
   这段文字可以编辑
@@ -162,4 +162,85 @@ div::after {
   style="border: 1px solid #ccc; padding: 10px; min-height: 200px;">
   开始输入内容...
 </div>
+```
+- draggable拖拽功能
+```
+<div draggable="true" ondragstart="drag(event)">
+  可拖拽的元素
+</div>
+
+<div ondrop="drop(event)" ondragover="allowDrop(event)">
+  拖放区域
+</div>
+
+<script>
+function allowDrop(ev) {
+  ev.preventDefault();
+}
+
+function drag(ev) {
+  ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function drop(ev) {
+  ev.preventDefault();
+  const data = ev.dataTransfer.getData("text");
+  ev.target.appendChild(document.getElementById(data));
+}
+</script>
+```
+- hidden隐藏元素：
+```
+<!-- 完全隐藏，不占据空间 -->
+<div hidden>
+  这个元素被隐藏了
+</div>
+
+<!-- 可以通过JavaScript控制 -->
+<script>
+  element.hidden = true;  // 隐藏
+  element.hidden = false; // 显示
+</script>
+```
+- spellcheck - 拼写检查
+```
+<textarea spellcheck="true">
+  This text will be spellchecked.
+</textarea>
+
+<input type="text" spellcheck="false">
+```
+- translate 翻译控制
+```
+<!-- 阻止翻译 -->
+<p translate="no">
+  Apple Inc.
+</p>
+
+<!-- 允许翻译 -->
+<p translate="yes">
+  这段文字可以被翻译
+</p>
+```
+
+四、语义化属性
+- role - ARIA角色
+- aria-* 无障碍属性
+
+五、链接和资源属性
+- download - 下载属性
+```
+<!-- 直接下载，而不是在浏览器中打开 -->
+<a href="document.pdf" download>下载文档</a>
+
+<!-- 指定下载文件名 -->
+<a href="image.jpg" download="我的图片.jpg">下载图片</a>
+```
+- loading 懒加载
+```
+<!-- 图片懒加载 -->
+<img src="image.jpg" loading="lazy" alt="描述">
+
+<!-- iframe懒加载 -->
+<iframe src="content.html" loading="lazy"></iframe>
 ```
