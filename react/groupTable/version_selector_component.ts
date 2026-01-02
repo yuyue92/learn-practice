@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import { forwardRef, useImperativeHandle, useState, useMemo } from 'react';
 
 interface VersionSelectorRef {
     setConfirmed: (confirmed: boolean) => void;
@@ -11,6 +11,11 @@ interface VersionSelectorProps {
     version2Data?: { header: string[]; data: string[][] } | null;
     inputPlaceholder?: string;
     onSave?: (value: string) => void;
+}
+
+interface DataWithIds {
+    header: Array<{ id: string; value: string }>;
+    data: Array<{ id: string; row: Array<{ id: string; value: string }> }>;
 }
 
 // 可复用的版本选择器组件
@@ -27,6 +32,21 @@ export const VersionSelector = forwardRef<VersionSelectorRef, VersionSelectorPro
     const [selectedOption, setSelectedOption] = useState('version1');
     const [customValue, setCustomValue] = useState('');
     const [isHovered, setIsHovered] = useState(false);
+
+    // 为数据添加唯一ID，使用 useMemo 缓存避免重复生成
+    const processDataWithIds = (data: { header: string[]; data: string[][] } | null): DataWithIds | null => {
+        if (!data) return null;
+        return {
+            header: data.header.map(h => ({ id: crypto.randomUUID(), value: h })),
+            data: data.data.map(row => ({
+                id: crypto.randomUUID(),
+                row: row.map(cell => ({ id: crypto.randomUUID(), value: cell }))
+            }))
+        };
+    };
+
+    const version1DataWithIds = useMemo(() => processDataWithIds(version1Data), [version1Data]);
+    const version2DataWithIds = useMemo(() => processDataWithIds(version2Data), [version2Data]);
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
@@ -216,7 +236,7 @@ export const VersionSelector = forwardRef<VersionSelectorRef, VersionSelectorPro
     // 渲染版本内容（字符串或表格）
     const renderVersionContent = (
         value: string, 
-        versionData: { header: string[]; data: string[][] } | null
+        versionData: DataWithIds | null
     ) => {
         if (versionData && versionData.header && versionData.data) {
             // 渲染表格
@@ -226,16 +246,16 @@ export const VersionSelector = forwardRef<VersionSelectorRef, VersionSelectorPro
                     <table style={styles.table}>
                         <thead>
                             <tr>
-                                {versionData.header.map((header, index) => (
-                                    <th key={`${header}-${index}`} style={styles.tableHeader}>{header}</th>
+                                {versionData.header.map((header) => (
+                                    <th key={header.id} style={styles.tableHeader}>{header.value}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {versionData.data.map((row, rowIndex) => (
-                                <tr key={`row-${rowIndex}`} style={styles.tableRow}>
-                                    {row.map((cell, cellIndex) => (
-                                        <td key={`cell-${rowIndex}-${cellIndex}`} style={styles.tableCell}>{cell}</td>
+                            {versionData.data.map((row) => (
+                                <tr key={row.id} style={styles.tableRow}>
+                                    {row.row.map((cell) => (
+                                        <td key={cell.id} style={styles.tableCell}>{cell.value}</td>
                                     ))}
                                 </tr>
                             ))}
@@ -284,7 +304,7 @@ export const VersionSelector = forwardRef<VersionSelectorRef, VersionSelectorPro
                                         style={styles.radio}
                                     />
                                     <span>Version One: </span>
-                                    {renderVersionContent(value1, version1Data)}
+                                    {renderVersionContent(value1, version1DataWithIds)}
                                 </label>
 
                                 {/* 版本2 */}
@@ -298,7 +318,7 @@ export const VersionSelector = forwardRef<VersionSelectorRef, VersionSelectorPro
                                         style={styles.radio}
                                     />
                                     <span>Version Two: </span>
-                                    {renderVersionContent(value2, version2Data)}
+                                    {renderVersionContent(value2, version2DataWithIds)}
                                 </label>
 
                                 {!version1Data && !version2Data &&
