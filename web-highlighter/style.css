@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.highlight-marker {
+    background-color: var(--highlight-color);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    border-radius: 2px;
+    padding: 2px 0;
+}
+
+.highlight-marker:hover {
+    opacity: 0.8;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.highlight-tooltip {
+    animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
