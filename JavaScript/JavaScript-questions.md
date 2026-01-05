@@ -38,4 +38,25 @@ const user = {
 1) Object.preventExtensions(obj)，作用：让对象“不可扩展”——不能再加新属性。
 2) Object.seal(obj)，作用：密封对象。= preventExtensions + 禁止删除 + 禁止重新配置属性。 但已有可写属性仍可改值。
 3) Object.freeze(obj)，作用：冻结对象。= seal + 值也不可改（对数据属性设置 writable: false）。 所以加/删/改都不行。
+---------------
+
+把 set/get 写成标准的 Proxy trap：用 Reflect.set / Reflect.get 去真正读写目标对象，并且 set 要返回布尔值。
+const handler = {
+  set(target, prop, value, receiver) {
+    console.log('Added/updated a property!');
+    // 真正写入目标对象，返回 true/false
+    return Reflect.set(target, prop, value, receiver);
+  },
+  get(target, prop, receiver) {
+    console.log('Accessed a property!');
+    // 真正从目标对象读取并返回
+    return Reflect.get(target, prop, receiver);
+  },
+};
+
+const person = new Proxy({}, handler);
+
+person.name = 'Lydia';
+console.log(person.name); // Lydia
+
 ```
