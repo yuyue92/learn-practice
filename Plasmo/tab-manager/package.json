@@ -1,0 +1,55 @@
+{
+  "name": "tab-manager",
+  "displayName": "智能标签页管理器",
+  "version": "0.0.1",
+  "description": "强大的标签页管理工具，支持分组、会话保存和批量操作",
+  "author": "yy3",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package"
+  },
+  "dependencies": {
+    "@plasmohq/messaging": "^0.7.2",
+    "@plasmohq/storage": "^1.15.0",
+    "plasmo": "0.90.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "4.1.1",
+    "@types/chrome": "0.0.258",
+    "@types/node": "20.11.5",
+    "@types/react": "18.2.48",
+    "@types/react-dom": "18.2.18",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "prettier": "3.2.4",
+    "tailwindcss": "3.4.1",
+    "typescript": "5.3.3"
+  },
+  "manifest": {
+    "permissions": [
+      "storage",
+      "tabs",
+      "tabGroups",
+      "notifications"
+    ],
+    "commands": {
+      "save-session": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+S",
+          "mac": "Command+Shift+S"
+        },
+        "description": "快速保存当前会话"
+      },
+      "open-manager": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+T",
+          "mac": "Command+Shift+T"
+        },
+        "description": "打开标签页管理器"
+      }
+    }
+  }
+}
