@@ -9,7 +9,8 @@
 ### App.tsx入口文件
 
 // 👇 只改这里就能切权限：superadmin/admin/hr/sales/investigator/user/ops
-    const rolePermission: RolePermission = "user";
+
+const rolePermission: RolePermission = "user";
 
 目标：先把「拖拽搭建 + 属性编辑 + 预览渲染 + 导入导出 Schema」做扎实，后续再加条件联动/版本/低代码等。
 
