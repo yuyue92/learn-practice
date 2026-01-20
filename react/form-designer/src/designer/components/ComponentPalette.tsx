@@ -1,6 +1,8 @@
 import { createDefaultField, createDefaultRow } from "../../schema/defaults";
 import type { FieldType } from "../../schema/types";
 import { useDesigner } from "../../state/designerContext";
+import { usePermissions } from "../../auth/RoleContext";
+
 
 const fieldGroups: Array<{ title: string; items: Array<{ type: FieldType; label: string }> }> = [
     {
@@ -31,6 +33,7 @@ const fieldGroups: Array<{ title: string; items: Array<{ type: FieldType; label:
 
 export function ComponentPalette() {
     const { state, dispatch } = useDesigner();
+    const perms = usePermissions();
 
     // 添加字段默认投放位置：优先当前选中的 col，否则第一行第一列，否则自动创建一行
     function addField(type: FieldType) {
@@ -71,8 +74,9 @@ export function ComponentPalette() {
                 <div>
                     <div className="text-xs font-semibold text-slate-500 mb-2">布局</div>
                     <button
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 active:scale-[0.99]"
-                        onClick={() => dispatch({ type: "ADD_ROW", row: createDefaultRow() })}
+                        disabled={!perms.canLayout}
+                        className={`w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 active:scale-[0.99] ${!perms.canLayout ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={() => perms.canLayout && dispatch({ type: "ADD_ROW", row: createDefaultRow() })}
                     >
                         + 行容器（Row）
                     </button>
@@ -80,14 +84,14 @@ export function ComponentPalette() {
                 </div>
 
                 {fieldGroups.map((g) => (
-                    <div key={g.title}>
+                    <div key={`group:${g.title}`}>
                         <div className="text-xs font-semibold text-slate-500 mb-2">{g.title}</div>
                         <div className="grid grid-cols-1 gap-2">
                             {g.items.map((it) => (
-                                <button
-                                    key={it.type}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 active:scale-[0.99]"
-                                    onClick={() => addField(it.type)}
+                                <button key={`${g.title}:${it.type}`}
+                                    disabled={!perms.canAddField}
+                                    className={`w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 active:scale-[0.99] ${!perms.canAddField ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    onClick={() => perms.canAddField && addField(it.type)}
                                 >
                                     + {it.label}
                                 </button>

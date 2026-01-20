@@ -11,6 +11,7 @@ import { useDesigner } from "../../state/designerContext";
 import { RowCard } from "./RowCard";
 import { FieldCard } from "./FieldCard";
 import { cn } from "../../utils/classnames";
+import { usePermissions } from "../../auth/RoleContext";
 
 // 解析 id：row:<rowId> 或 field:<rowId>:<colId>:<fieldId>
 function parseId(id: string) {
@@ -28,6 +29,7 @@ function parseId(id: string) {
 
 export function Canvas() {
     const { state, dispatch } = useDesigner();
+    const perms = usePermissions();
     const rows = state.schema.rows;
 
     // 记录拖拽开始时 field 的来源 index（避免每次 find）
@@ -134,9 +136,9 @@ export function Canvas() {
             ) : (
                 <DndContext
                     collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
+                    onDragStart={perms.canReorder ? handleDragStart : undefined}
+                    onDragOver={perms.canReorder ? handleDragOver : undefined}
+                    onDragEnd={perms.canReorder ? handleDragEnd : undefined}
                 >
                     {/* 行排序 */}
                     <SortableContext items={rowItems} strategy={verticalListSortingStrategy}>
@@ -150,7 +152,9 @@ export function Canvas() {
                                         rowId={row.id}
                                         selected={rowSelected}
                                         onSelect={() => dispatch({ type: "SELECT", selected: { kind: "row", rowId: row.id } })}
-                                        onDelete={() => dispatch({ type: "DELETE_ROW", rowId: row.id })}
+                                        onDelete={() => perms.canDelete && perms.canLayout && dispatch({ type: "DELETE_ROW", rowId: row.id })}
+                                        disableActions={!perms.canLayout || !perms.canDelete}
+                                        disableDrag={!perms.canReorder || !perms.canLayout}
                                     >
                                         {/* Row 内 columns（12 栅格） */}
                                         <div className="grid grid-cols-12 gap-3">

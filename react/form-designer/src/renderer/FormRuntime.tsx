@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import type { FieldSchema, FormSchema } from "../schema/types";
 import { cn } from "../utils/classnames";
+import { usePermissions } from "../auth/RoleContext";
+
 
 type Values = Record<string, any>;
 
@@ -149,6 +151,8 @@ function RuntimeField({
 }
 
 export function FormRuntime({ schema }: { schema: FormSchema }) {
+    const perms = usePermissions();
+
     const [values, setValues] = useState<Values>(() => initialValuesFromSchema(schema));
     const [open, setOpen] = useState(false);
 
@@ -189,12 +193,12 @@ export function FormRuntime({ schema }: { schema: FormSchema }) {
                     >
                         重置
                     </button>
-                    <button
+                    {perms.canExportValues && (<button
                         className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
                         onClick={() => setOpen((v) => !v)}
                     >
                         {open ? "隐藏 values" : "导出 values"}
-                    </button>
+                    </button>)}
                 </div>
             </div>
 

@@ -8,15 +8,22 @@ export function RowCard({
     selected,
     onSelect,
     onDelete,
+    disableActions,
+    disableDrag,
     children,
 }: {
     rowId: string;
     selected: boolean;
     onSelect: () => void;
     onDelete: () => void;
+    disableActions?: boolean;
+    disableDrag?: boolean;
     children: React.ReactNode;
 }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `row:${rowId}` });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: `row:${rowId}`,
+        disabled: !!disableDrag,
+    });
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -37,7 +44,7 @@ export function RowCard({
             <div className="mb-3 flex items-center justify-between">
                 <div className="text-sm font-semibold text-slate-900">Row</div>
                 <div className="flex items-center gap-2">
-                    <button
+                    {!disableActions && (<button
                         className="rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -45,8 +52,8 @@ export function RowCard({
                         }}
                     >
                         删除行
-                    </button>
-                    <button
+                    </button>)}
+                    {!disableDrag && (<button
                         className="cursor-grab rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 active:cursor-grabbing"
                         onClick={(e) => e.stopPropagation()}
                         {...attributes}
@@ -54,7 +61,7 @@ export function RowCard({
                         title="拖拽排序行"
                     >
                         拖拽行
-                    </button>
+                    </button>)}
                 </div>
             </div>
 

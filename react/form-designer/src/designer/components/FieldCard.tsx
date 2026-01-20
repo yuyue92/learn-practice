@@ -3,6 +3,8 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { FieldSchema } from "../../schema/types";
 import { cn } from "../../utils/classnames";
+import { usePermissions } from "../../auth/RoleContext";
+
 
 export function FieldCard({
     rowId,
@@ -19,9 +21,11 @@ export function FieldCard({
     onSelect: () => void;
     onDelete: () => void;
 }) {
+    const perms = usePermissions();
     // 原本：useSortable({ id: field.id })
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: `field:${rowId}:${colId}:${field.id}`,
+        disabled: !perms.canReorder,
     });
 
 
@@ -64,7 +68,7 @@ export function FieldCard({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button
+                    {perms.canDelete && (<button
                         className="rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -72,9 +76,9 @@ export function FieldCard({
                         }}
                     >
                         删除
-                    </button>
+                    </button>)}
 
-                    <button
+                    {perms.canReorder && (<button
                         className="cursor-grab rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 active:cursor-grabbing"
                         onClick={(e) => e.stopPropagation()}
                         {...attributes}
@@ -82,7 +86,7 @@ export function FieldCard({
                         title="拖拽排序"
                     >
                         拖拽
-                    </button>
+                    </button>)}
                 </div>
             </div>
 

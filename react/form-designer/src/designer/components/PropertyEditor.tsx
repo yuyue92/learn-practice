@@ -3,6 +3,7 @@ import { useDesigner } from "../../state/designerContext";
 import type { OptionItem } from "../../schema/types";
 import { cn } from "../../utils/classnames";
 import { uid } from "../../utils/id";
+import { usePermissions } from "../../auth/RoleContext";
 
 function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
     return (
@@ -97,6 +98,7 @@ function OptionsEditor({
 
 export function PropertyEditor() {
     const { state, dispatch } = useDesigner();
+    const perms = usePermissions();
     const schema = state.schema;
 
     // 当前选中节点定位
@@ -132,12 +134,12 @@ export function PropertyEditor() {
                     <Input
                         label="标题"
                         value={schema.title}
-                        onChange={(v) => dispatch({ type: "UPDATE_FORM", patch: { title: v } })}
+                        onChange={(v) => perms.canEditProps && dispatch({ type: "UPDATE_FORM", patch: { title: v } })}
                     />
                     <Textarea
                         label="描述"
                         value={schema.description || ""}
-                        onChange={(v) => dispatch({ type: "UPDATE_FORM", patch: { description: v } })}
+                        onChange={(v) => perms.canEditProps && dispatch({ type: "UPDATE_FORM", patch: { description: v } })}
                     />
                 </div>
             </div>
@@ -209,13 +211,14 @@ export function PropertyEditor() {
                             max={12}
                             className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200"
                             value={selectedCol.span}
-                            onChange={(e) => dispatch({ type: "UPDATE_COL", rowId: selectedRow.id, colId: selectedCol.id, patch: { span: Number(e.target.value || 12) } })}
+                            disabled={!perms.canLayout}
+                            onChange={(e) => perms.canLayout && dispatch({ type: "UPDATE_COL", rowId: selectedRow.id, colId: selectedCol.id, patch: { span: Number(e.target.value || 12) } })}
                         />
                     </label>
 
                     <div className="text-xs text-slate-500">该列字段数：{selectedCol.children.length}</div>
 
-                    <button
+                    {perms.canLayout && perms.canDelete && (<button
                         className={cn(
                             "w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700",
                             "hover:bg-red-100"
@@ -225,7 +228,7 @@ export function PropertyEditor() {
                         title={selectedRow.columns.length <= 1 ? "至少保留 1 列" : "删除列"}
                     >
                         删除该列
-                    </button>
+                    </button>)}
                 </div>
             ) : null}
 
