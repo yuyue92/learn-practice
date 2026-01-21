@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基金收益分析平台</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0a0e1a;
+            --secondary-bg: #151b2e;
+            --card-bg: #1a2235;
+            --accent-blue: #00d4ff;
+            --accent-green: #00ff88;
+            --accent-red: #ff3366;
+            --accent-gold: #ffd700;
+            --text-primary: #e8edf3;
+            --text-secondary: #8a95a8;
+            --border-color: rgba(0, 212, 255, 0.2);
+            --glow-color: rgba(0, 212, 255, 0.4);
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 动态背景效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 51, 102, 0.02) 0%, transparent 50%);
+            animation: bgMove 20s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(5%, 5%); }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 顶部标题 */
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            margin-bottom: 30px;
+            position: relative;
+            background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--card-bg) 100%);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green), var(--accent-blue));
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: titleGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px var(--glow-color)); }
+            50% { filter: drop-shadow(0 0 20px var(--glow-color)); }
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+
+        /* 控制面板 */
+        .controls {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: var(--accent-blue);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select, button {
+            background: var(--secondary-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover, button:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px var(--glow-color);
+            transform: translateY(-2px);
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        button {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button.primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+            border: none;
+            color: var(--primary-bg);
+        }
+
+        /* 指标卡片 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-blue), var(--accent-green));
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 212, 255, 0.2);
+            border-color: var(--accent-blue);
+        }
+
+        .metric-label {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-blue);
+            line-height: 1;
+        }
+
+        .metric-value.positive { color: var(--accent-green); }
+        .metric-value.negative { color: var(--accent-red); }
+
+        .metric-change {
+            font-size: 0.85em;
+            margin-top: 8px;
+            color: var(--text-secondary);
+        }
+
+        /* 图表容器 */
+        .chart-section {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-blue);
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 500px;
+            position: relative;
+        }
+
+        /* 对比表格 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--secondary-bg);
+            color: var(--accent-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+        }
+
+        /* 基金标签 */
+        .fund-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .fund-tag.fund1 {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+        }
+
+        .fund-tag.fund2 {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .fund-tag.fund3 {
+            background: rgba(255, 215, 0, 0.2);
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold);
+        }
+
+        .fund-tag.benchmark {
+            background: rgba(255, 51, 102, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .controls { flex-direction: column; }
+            .chart-container { height: 350px; }
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            margin-top: 50px;
+        }
+
+        /* 数据更新指示器 */
+        .update-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-size: 0.8em;
+            z-index: 1000;
+            display: none;
+        }
+
+        .update-indicator.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="update-indicator" id="updateIndicator">
+        <span class="loading"></span> 数据更新中...
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>Fund Analytics Platform</h1>
+            <p class="subtitle">专业基金收益分析系统 · Professional Fund Analysis System</p>
+        </header>
+
+        <!-- 控制面板 -->
+        <div class="controls">
+            <div class="control-group">
+                <label>账户:</label>
+                <select id="accountSelect">
+                    <option value="account1">个人账户 A</option>
+                    <option value="account2">个人账户 B</option>
+                    <option value="account3">企业账户 C</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>时间周期:</label>
+                <select id="periodSelect">
+                    <option value="1m">近1个月</option>
+                    <option value="3m">近3个月</option>
+                    <option value="6m">近6个月</option>
+                    <option value="1y" selected>近1年</option>
+                    <option value="3y">近3年</option>
+                    <option value="5y">近5年</option>
+                    <option value="all">全部</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>对比模式:</label>
+                <select id="comparisonMode">
+                    <option value="single">单基金</option>
+                    <option value="multi" selected>多基金对比</option>
+                    <option value="benchmark">基准对比</option>
+                </select>
+            </div>
+            <button class="primary" onclick="updateData()">刷新数据</button>
+            <button onclick="exportData()">导出报告</button>
+        </div>
+
+        <!-- 关键指标 -->
+        <div class="metrics-grid" id="metricsGrid">
+            <!-- 动态生成 -->
+        </div>
+
+        <!-- 收益曲线图 -->
+        <div class="chart-section">
+            <div class="chart-title">📈 累计收益曲线 Cumulative Returns</div>
+            <div class="chart-container" id="returnChart"></div>
+        </div>
+
+        <!-- 波动率分析 -->
+        <div class="chart-section">
+            <div class="chart-title">📊 收益分布与波动率 Returns Distribution</div>
+            <div class="chart-container" id="distributionChart"></div>
+        </div>
+
+        <!-- 风险收益散点图 -->
+        <div class="chart-section">
+            <div class="chart-title">🎯 风险收益分析 Risk-Return Analysis</div>
+            <div class="chart-container" id="riskReturnChart"></div>
+        </div>
+
+        <!-- 回撤分析 -->
+        <div class="chart-section">
+            <div class="chart-title">⚠️ 最大回撤分析 Maximum Drawdown</div>
+            <div class="chart-container" id="drawdownChart"></div>
+        </div>
+
+        <!-- 详细指标对比表 -->
+        <div class="chart-section">
+            <div class="chart-title">📋 详细指标对比 Detailed Metrics Comparison</div>
+            <table class="comparison-table" id="comparisonTable">
+                <!-- 动态生成 -->
+            </table>
+        </div>
+
+        <footer class="footer">
+            <p>© 2026 Fund Analytics Platform | 数据更新时间: <span id="updateTime"></span></p>
+            <p>投资有风险，入市需谨慎 | Past performance does not guarantee future results</p>
+        </footer>
+    </div>
+
+    <script>
+        // 模拟基金数据
+        const fundsData = {
+            fund1: {
+                name: '强基金A - 科技成长',
+                code: 'FD001',
+                manager: '张经理',
+                color: '#00d4ff',
+                data: generateFundData(252, 0.25, 0.18) // 年化25%收益，18%波动
+            },
+            fund2: {
+                name: '强基金B - 价值投资',
+                code: 'FD002',
+                manager: '李经理',
+                color: '#00ff88',
+                data: generateFundData(252, 0.18, 0.12) // 年化18%收益，12%波动
+            },
+            fund3: {
+                name: '强基金C - 均衡配置',
+                code: 'FD003',
+                manager: '王经理',
+                color: '#ffd700',
+                data: generateFundData(252, 0.15, 0.10) // 年化15%收益，10%波动
+            },
+            benchmark: {
+                name: '沪深300指数',
+                code: 'HS300',
+                color: '#ff3366',
+                data: generateFundData(252, 0.08, 0.15) // 年化8%收益，15%波动
+            }
+        };
+
+        // 生成模拟基金数据
+        function generateFundData(days, annualReturn, volatility) {
+            const data = [];
+            const dailyReturn = annualReturn / 252;
+            const dailyVol = volatility / Math.sqrt(252);
+            
+            let cumulativeReturn = 1;
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            
+            for (let i = 0; i < days; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                
+                // 添加随机波动
+                const randomReturn = dailyReturn + (Math.random() - 0.5) * dailyVol * 2;
+                cumulativeReturn *= (1 + randomReturn);
+                
+                data.push({
+                    date: date.toISOString().split('T')[0],
+                    value: cumulativeReturn,
+                    dailyReturn: randomReturn
+                });
+            }
+            
+            return data;
+        }
+
+        // 计算专业指标
+        function calculateMetrics(fundData, skipAlphaBeta = false) {
+            const returns = fundData.map(d => d.dailyReturn);
+            const values = fundData.map(d => d.value);
+            
+            // 总收益率
+            const totalReturn = (values[values.length - 1] - values[0]) / values[0];
+            
+            // 年化收益率
+            const days = fundData.length;
+            const annualizedReturn = Math.pow(1 + totalReturn, 252 / days) - 1;
+            
+            // 年化波动率
+            const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+            const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+            const volatility = Math.sqrt(variance * 252);
+            
+            // 夏普比率 (假设无风险利率3%)
+            const riskFreeRate = 0.03;
+            const sharpeRatio = (annualizedReturn - riskFreeRate) / volatility;
+            
+            // 最大回撤
+            let maxDrawdown = 0;
+            let peak = values[0];
+            const drawdowns = [];
+            
+            for (let i = 0; i < values.length; i++) {
+                if (values[i] > peak) {
+                    peak = values[i];
+                }
+                const drawdown = (peak - values[i]) / peak;
+                drawdowns.push(drawdown);
+                if (drawdown > maxDrawdown) {
+                    maxDrawdown = drawdown;
+                }
+            }
+            
+            // Calmar比率
+            const calmarRatio = maxDrawdown > 0 ? annualizedReturn / maxDrawdown : 0;
+            
+            // Sortino比率 (只考虑下行波动)
+            const downReturns = returns.filter(r => r < 0);
+            const downVariance = downReturns.length > 0 
+                ? downReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / downReturns.length 
+                : 0;
+            const downVolatility = Math.sqrt(downVariance * 252);
+            const sortinoRatio = downVolatility > 0 ? (annualizedReturn - riskFreeRate) / downVolatility : 0;
+            
+            // 计算Alpha和Beta (相对于基准) - 避免递归
+            let alpha = 0;
+            let beta = 0;
+            if (!skipAlphaBeta) {
+                const benchmarkReturns = fundsData.benchmark.data.map(d => d.dailyReturn);
+                beta = calculateBeta(returns, benchmarkReturns);
+                const benchmarkAnnualReturn = calculateMetrics(fundsData.benchmark.data, true).annualizedReturn;
+                alpha = annualizedReturn - (riskFreeRate + beta * (benchmarkAnnualReturn - riskFreeRate));
+            }
+            
+            // 胜率
+            const winRate = returns.filter(r => r > 0).length / returns.length;
+            
+            // 盈亏比
+            const avgWin = returns.filter(r => r > 0).reduce((a, b) => a + b, 0) / returns.filter(r => r > 0).length || 0;
+            const avgLoss = Math.abs(returns.filter(r => r < 0).reduce((a, b) => a + b, 0) / returns.filter(r => r < 0).length || 0);
+            const profitLossRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+            
+            return {
+                totalReturn,
+                annualizedReturn,
+                volatility,
+                sharpeRatio,
+                maxDrawdown,
+                calmarRatio,
+                sortinoRatio,
+                alpha,
+                beta,
+                winRate,
+                profitLossRatio,
+                drawdowns
+            };
+        }
+
+        // 计算Beta系数
+        function calculateBeta(fundReturns, benchmarkReturns) {
+            const n = Math.min(fundReturns.length, benchmarkReturns.length);
+            const fundMean = fundReturns.slice(0, n).reduce((a, b) => a + b, 0) / n;
+            const benchMean = benchmarkReturns.slice(0, n).reduce((a, b) => a + b, 0) / n;
+            
+            let covariance = 0;
+            let benchVariance = 0;
+            
+            for (let i = 0; i < n; i++) {
+                covariance += (fundReturns[i] - fundMean) * (benchmarkReturns[i] - benchMean);
+                benchVariance += Math.pow(benchmarkReturns[i] - benchMean, 2);
+            }
+            
+            covariance /= n;
+            benchVariance /= n;
+            
+            return benchVariance > 0 ? covariance / benchVariance : 0;
+        }
+
+        // 更新指标卡片
+        function updateMetrics() {
+            const grid = document.getElementById('metricsGrid');
+            grid.innerHTML = '';
+            
+            const mode = document.getElementById('comparisonMode').value;
+            const funds = mode === 'single' ? ['fund1'] : 
+                         mode === 'benchmark' ? ['fund1', 'benchmark'] : 
+                         ['fund1', 'fund2', 'fund3'];
+            
+            const allMetrics = {};
+            funds.forEach(fundKey => {
+                allMetrics[fundKey] = calculateMetrics(fundsData[fundKey].data);
+            });
+            
+            // 显示主要基金的关键指标
+            const mainFund = funds[0];
+            const metrics = allMetrics[mainFund];
+            
+            const metricsToShow = [
+                { label: '累计收益率', value: (metrics.totalReturn * 100).toFixed(2) + '%', class: metrics.totalReturn > 0 ? 'positive' : 'negative' },
+                { label: '年化收益率', value: (metrics.annualizedReturn * 100).toFixed(2) + '%', class: metrics.annualizedReturn > 0 ? 'positive' : 'negative' },
+                { label: '年化波动率', value: (metrics.volatility * 100).toFixed(2) + '%', class: '' },
+                { label: '夏普比率', value: metrics.sharpeRatio.toFixed(3), class: metrics.sharpeRatio > 1 ? 'positive' : '' },
+                { label: '最大回撤', value: (metrics.maxDrawdown * 100).toFixed(2) + '%', class: 'negative' },
+                { label: 'Calmar比率', value: metrics.calmarRatio.toFixed(3), class: metrics.calmarRatio > 1 ? 'positive' : '' },
+                { label: 'Sortino比率', value: metrics.sortinoRatio.toFixed(3), class: metrics.sortinoRatio > 1 ? 'positive' : '' },
+                { label: 'Alpha', value: (metrics.alpha * 100).toFixed(2) + '%', class: metrics.alpha > 0 ? 'positive' : 'negative' },
+                { label: 'Beta', value: metrics.beta.toFixed(3), class: '' },
+                { label: '胜率', value: (metrics.winRate * 100).toFixed(1) + '%', class: metrics.winRate > 0.5 ? 'positive' : '' },
+                { label: '盈亏比', value: metrics.profitLossRatio.toFixed(2), class: metrics.profitLossRatio > 1 ? 'positive' : '' },
+            ];
+            
+            metricsToShow.forEach(metric => {
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.innerHTML = `
+                    <div class="metric-label">${metric.label}</div>
+                    <div class="metric-value ${metric.class}">${metric.value}</div>
+                    <div class="metric-change">基于 ${fundsData[mainFund].name}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 初始化收益曲线图
+        function initReturnChart() {
+            const chart = echarts.init(document.getElementById('returnChart'));
+            const mode = document.getElementById('comparisonMode').value;
+            
+            const funds = mode === 'single' ? ['fund1'] : 
+                         mode === 'benchmark' ? ['fund1', 'benchmark'] : 
+                         ['fund1', 'fund2', 'fund3', 'benchmark'];
+            
+            const series = funds.map(fundKey => {
+                const fund = fundsData[fundKey];
+                return {
+                    name: fund.name,
+                    type: 'line',
+                    data: fund.data.map(d => [d.date, ((d.value - 1) * 100).toFixed(2)]),
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 3, color: fund.color },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                            offset: 0,
+                            color: fund.color + '40'
+                        }, {
+                            offset: 1,
+                            color: fund.color + '00'
+                        }])
+                    }
+                };
+            });
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 34, 53, 0.95)',
+                    borderColor: '#00d4ff',
+                    borderWidth: 1,
+                    textStyle: { color: '#e8edf3', fontSize: 12 },
+                    formatter: function(params) {
+                        let result = `<div style="font-weight:bold;margin-bottom:5px;">${params[0].axisValue}</div>`;
+                        params.forEach(param => {
+                            result += `<div style="margin:3px 0;">
+                                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${param.color};margin-right:5px;"></span>
+                                ${param.seriesName}: <span style="color:${param.value[1] > 0 ? '#00ff88' : '#ff3366'};font-weight:bold;">${param.value[1]}%</span>
+                            </div>`;
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: funds.map(k => fundsData[k].name),
+                    textStyle: { color: '#8a95a8', fontSize: 12 },
+                    top: 10,
+                    itemWidth: 25,
+                    itemHeight: 14
+                },
+                grid: { left: '3%', right: '3%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: {
+                    type: 'time',
+                    boundaryGap: false,
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8', fontSize: 11 },
+                    splitLine: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '收益率 (%)',
+                    nameTextStyle: { color: '#00d4ff', fontSize: 12 },
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { 
+                        color: '#8a95a8', 
+                        fontSize: 11,
+                        formatter: '{value}%' 
+                    },
+                    splitLine: { lineStyle: { color: '#2a3f5f', type: 'dashed' } }
+                },
+                series: series,
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        start: 0,
+                        end: 100
+                    },
+                    {
+                        start: 0,
+                        end: 100,
+                        handleIcon: 'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z',
+                        handleSize: '80%',
+                        dataBackground: {
+                            areaStyle: { color: '#00d4ff40' },
+                            lineStyle: { color: '#00d4ff' }
+                        },
+                        handleStyle: { color: '#00d4ff' },
+                        textStyle: { color: '#8a95a8' },
+                        borderColor: '#2a3f5f',
+                        height: 30,
+                        bottom: 20
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 初始化收益分布图
+        function initDistributionChart() {
+            const chart = echarts.init(document.getElementById('distributionChart'));
+            const mode = document.getElementById('comparisonMode').value;
+            
+            const funds = mode === 'single' ? ['fund1'] : 
+                         mode === 'benchmark' ? ['fund1', 'benchmark'] : 
+                         ['fund1', 'fund2', 'fund3'];
+            
+            const series = funds.map(fundKey => {
+                const fund = fundsData[fundKey];
+                const returns = fund.data.map(d => d.dailyReturn * 100);
+                
+                // 创建直方图数据
+                const bins = 50;
+                const min = Math.min(...returns);
+                const max = Math.max(...returns);
+                const binWidth = (max - min) / bins;
+                const histogram = new Array(bins).fill(0);
+                
+                returns.forEach(r => {
+                    const binIndex = Math.min(Math.floor((r - min) / binWidth), bins - 1);
+                    histogram[binIndex]++;
+                });
+                
+                return {
+                    name: fund.name,
+                    type: 'bar',
+                    data: histogram.map((count, i) => [min + i * binWidth + binWidth/2, count]),
+                    itemStyle: { color: fund.color + '80' },
+                    barWidth: '95%'
+                };
+            });
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 34, 53, 0.95)',
+                    borderColor: '#00d4ff',
+                    borderWidth: 1,
+                    textStyle: { color: '#e8edf3' },
+                    axisPointer: { type: 'shadow' }
+                },
+                legend: {
+                    data: funds.map(k => fundsData[k].name),
+                    textStyle: { color: '#8a95a8' },
+                    top: 10
+                },
+                grid: { left: '3%', right: '3%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: {
+                    type: 'value',
+                    name: '日收益率 (%)',
+                    nameTextStyle: { color: '#00d4ff' },
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8' },
+                    splitLine: { lineStyle: { color: '#2a3f5f', type: 'dashed' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '频次',
+                    nameTextStyle: { color: '#00d4ff' },
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8' },
+                    splitLine: { lineStyle: { color: '#2a3f5f', type: 'dashed' } }
+                },
+                series: series
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 初始化风险收益散点图
+        function initRiskReturnChart() {
+            const chart = echarts.init(document.getElementById('riskReturnChart'));
+            const mode = document.getElementById('comparisonMode').value;
+            
+            const funds = mode === 'single' ? ['fund1'] : 
+                         ['fund1', 'fund2', 'fund3', 'benchmark'];
+            
+            const series = funds.map(fundKey => {
+                const fund = fundsData[fundKey];
+                const metrics = calculateMetrics(fund.data);
+                
+                return {
+                    name: fund.name,
+                    type: 'scatter',
+                    symbolSize: 20,
+                    data: [[metrics.volatility * 100, metrics.annualizedReturn * 100]],
+                    itemStyle: { color: fund.color },
+                    label: {
+                        show: true,
+                        formatter: fund.name.split('-')[0].trim(),
+                        position: 'top',
+                        color: fund.color,
+                        fontSize: 11,
+                        fontWeight: 'bold'
+                    }
+                };
+            });
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(26, 34, 53, 0.95)',
+                    borderColor: '#00d4ff',
+                    borderWidth: 1,
+                    textStyle: { color: '#e8edf3' },
+                    formatter: function(params) {
+                        return `<div style="font-weight:bold;margin-bottom:5px;">${params.seriesName}</div>
+                                <div>年化波动率: ${params.data[0].toFixed(2)}%</div>
+                                <div>年化收益率: ${params.data[1].toFixed(2)}%</div>`;
+                    }
+                },
+                legend: {
+                    data: funds.map(k => fundsData[k].name),
+                    textStyle: { color: '#8a95a8' },
+                    top: 10
+                },
+                grid: { left: '3%', right: '3%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: {
+                    type: 'value',
+                    name: '年化波动率 (%)',
+                    nameTextStyle: { color: '#00d4ff' },
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8' },
+                    splitLine: { lineStyle: { color: '#2a3f5f', type: 'dashed' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '年化收益率 (%)',
+                    nameTextStyle: { color: '#00d4ff' },
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8' },
+                    splitLine: { lineStyle: { color: '#2a3f5f', type: 'dashed' } }
+                },
+                series: series
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 初始化回撤图
+        function initDrawdownChart() {
+            const chart = echarts.init(document.getElementById('drawdownChart'));
+            const mode = document.getElementById('comparisonMode').value;
+            
+            const funds = mode === 'single' ? ['fund1'] : 
+                         mode === 'benchmark' ? ['fund1', 'benchmark'] : 
+                         ['fund1', 'fund2', 'fund3'];
+            
+            const series = funds.map(fundKey => {
+                const fund = fundsData[fundKey];
+                const metrics = calculateMetrics(fund.data);
+                
+                return {
+                    name: fund.name,
+                    type: 'line',
+                    data: fund.data.map((d, i) => [d.date, -(metrics.drawdowns[i] * 100).toFixed(2)]),
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 2, color: fund.color },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                            offset: 0,
+                            color: fund.color + '00'
+                        }, {
+                            offset: 1,
+                            color: fund.color + '40'
+                        }])
+                    }
+                };
+            });
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 34, 53, 0.95)',
+                    borderColor: '#00d4ff',
+                    borderWidth: 1,
+                    textStyle: { color: '#e8edf3' }
+                },
+                legend: {
+                    data: funds.map(k => fundsData[k].name),
+                    textStyle: { color: '#8a95a8' },
+                    top: 10
+                },
+                grid: { left: '3%', right: '3%', bottom: '10%', top: '15%', containLabel: true },
+                xAxis: {
+                    type: 'time',
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8' },
+                    splitLine: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '回撤 (%)',
+                    nameTextStyle: { color: '#ff3366' },
+                    axisLine: { lineStyle: { color: '#2a3f5f' } },
+                    axisLabel: { color: '#8a95a8', formatter: '{value}%' },
+                    splitLine: { lineStyle: { color: '#2a3f5f', type: 'dashed' } }
+                },
+                series: series
+            };
+            
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 更新对比表格
+        function updateComparisonTable() {
+            const table = document.getElementById('comparisonTable');
+            const mode = document.getElementById('comparisonMode').value;
+            
+            const funds = mode === 'single' ? ['fund1'] : 
+                         ['fund1', 'fund2', 'fund3', 'benchmark'];
+            
+            const allMetrics = {};
+            funds.forEach(fundKey => {
+                allMetrics[fundKey] = calculateMetrics(fundsData[fundKey].data);
+            });
+            
+            const rows = [
+                { label: '基金名称', key: 'name', format: (v, k) => `<span class="fund-tag ${k}">${fundsData[k].name}</span>` },
+                { label: '基金代码', key: 'code', format: (v, k) => fundsData[k].code },
+                { label: '累计收益率', key: 'totalReturn', format: v => (v * 100).toFixed(2) + '%' },
+                { label: '年化收益率', key: 'annualizedReturn', format: v => (v * 100).toFixed(2) + '%' },
+                { label: '年化波动率', key: 'volatility', format: v => (v * 100).toFixed(2) + '%' },
+                { label: '夏普比率', key: 'sharpeRatio', format: v => v.toFixed(3) },
+                { label: '最大回撤', key: 'maxDrawdown', format: v => (v * 100).toFixed(2) + '%' },
+                { label: 'Calmar比率', key: 'calmarRatio', format: v => v.toFixed(3) },
+                { label: 'Sortino比率', key: 'sortinoRatio', format: v => v.toFixed(3) },
+                { label: 'Alpha', key: 'alpha', format: v => (v * 100).toFixed(2) + '%' },
+                { label: 'Beta', key: 'beta', format: v => v.toFixed(3) },
+                { label: '胜率', key: 'winRate', format: v => (v * 100).toFixed(1) + '%' },
+                { label: '盈亏比', key: 'profitLossRatio', format: v => v.toFixed(2) }
+            ];
+            
+            let html = '<thead><tr><th>指标</th>';
+            funds.forEach(fundKey => {
+                html += `<th>${fundsData[fundKey].name}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            rows.forEach(row => {
+                html += `<tr><td>${row.label}</td>`;
+                funds.forEach(fundKey => {
+                    const value = row.key === 'name' || row.key === 'code' 
+                        ? row.format(null, fundKey)
+                        : row.format(allMetrics[fundKey][row.key]);
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        // 更新所有数据
+        function updateData() {
+            const indicator = document.getElementById('updateIndicator');
+            indicator.classList.add('active');
+            
+            setTimeout(() => {
+                updateMetrics();
+                initReturnChart();
+                initDistributionChart();
+                initRiskReturnChart();
+                initDrawdownChart();
+                updateComparisonTable();
+                updateTime();
+                
+                indicator.classList.remove('active');
+            }, 500);
+        }
+
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('updateTime').textContent = now.toLocaleString('zh-CN');
+        }
+
+        // 导出数据
+        function exportData() {
+            alert('导出功能开发中...\n将导出为 Excel 格式，包含所有图表和指标数据');
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            updateData();
+            
+            // 绑定事件监听
+            document.getElementById('accountSelect').addEventListener('change', updateData);
+            document.getElementById('periodSelect').addEventListener('change', updateData);
+            document.getElementById('comparisonMode').addEventListener('change', updateData);
+        };
+    </script>
+</body>
+</html>
