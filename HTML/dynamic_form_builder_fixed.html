@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态表单生成器 Pro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .toolbar-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-right: auto;
+            color: #24292f;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #d0d7de;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #f6f8fa;
+        }
+
+        .btn.primary {
+            background: #0969da;
+            color: white;
+            border-color: #0969da;
+        }
+
+        .btn.primary:hover {
+            background: #0550ae;
+        }
+
+        .btn.success {
+            background: #1f883d;
+            color: white;
+            border-color: #1f883d;
+        }
+
+        .btn.success:hover {
+            background: #1a7f37;
+        }
+
+        .btn.danger {
+            background: #da3633;
+            color: white;
+            border-color: #da3633;
+        }
+
+        .btn.danger:hover {
+            background: #b52a2a;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* 左侧组件面板 */
+        .left-panel {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .section-title {
+            padding: 12px 16px;
+            font-weight: 600;
+            background: #f8f9fa;
+            color: #24292f;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title:hover {
+            background: #f0f1f2;
+        }
+
+        .section-toggle {
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+
+        .section-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .component-list {
+            padding: 12px;
+            display: none;
+        }
+
+        .component-list.expanded {
+            display: block;
+        }
+
+        .component-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .component-item:hover {
+            border-color: #0969da;
+            background: #f6f8fa;
+            transform: translateX(2px);
+        }
+
+        .component-item:active {
+            cursor: grabbing;
+        }
+
+        .component-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+        }
+
+        .component-icon.layout {
+            background: #8250df;
+        }
+
+        .component-icon.form {
+            background: #0969da;
+        }
+
+        .component-desc {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* 中间画布区域 */
+        .canvas-area {
+            flex: 1;
+            background: #f8f9fa;
+            position: relative;
+            overflow: auto;
+        }
+
+        .canvas {
+            min-height: 100%;
+            padding: 20px;
+        }
+
+        .drop-zone {
+            min-height: calc(100vh - 140px);
+            border: 2px dashed #d0d7de;
+            border-radius: 8px;
+            background: white;
+            position: relative;
+            padding: 20px;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #0969da;
+            background: #f0f6ff;
+        }
+
+        .drop-placeholder {
+            text-align: center;
+            color: #656d76;
+            font-size: 16px;
+            padding: 60px 20px;
+        }
+
+        /* 行容器样式 - 支持自动换行 */
+        .container-element.row {
+            border: 2px solid #8250df;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #fafbfc;
+            position: relative;
+            min-height: 120px;
+        }
+
+        .container-element.row .container-content {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap; /* 关键：支持自动换行 */
+            min-height: 80px;
+        }
+
+        /* 列容器样式 - 垂直布局 */
+        .container-element.column {
+            border: 2px solid #1f883d;
+            border-radius: 6px;
+            padding: 12px;
+            background: #f6f8fa;
+            position: relative;
+            min-height: 100px;
+            flex-shrink: 0;
+        }
+
+        /* Column内部垂直排列 */
+        .container-element.column .container-content {
+            display: flex;
+            flex-direction: column; /* 关键：垂直排列 */
+            gap: 12px;
+        }
+
+        /* 栅格宽度 */
+        .col-span-1 { flex: 0 0 calc(8.333% - 10px); }
+        .col-span-2 { flex: 0 0 calc(16.666% - 10px); }
+        .col-span-3 { flex: 0 0 calc(25% - 10px); }
+        .col-span-4 { flex: 0 0 calc(33.333% - 10px); }
+        .col-span-5 { flex: 0 0 calc(41.666% - 10px); }
+        .col-span-6 { flex: 0 0 calc(50% - 10px); }
+        .col-span-7 { flex: 0 0 calc(58.333% - 10px); }
+        .col-span-8 { flex: 0 0 calc(66.666% - 10px); }
+        .col-span-9 { flex: 0 0 calc(75% - 10px); }
+        .col-span-10 { flex: 0 0 calc(83.333% - 10px); }
+        .col-span-11 { flex: 0 0 calc(91.666% - 10px); }
+        .col-span-12 { flex: 0 0 calc(100% - 10px); }
+
+        /* 分组容器样式 */
+        .container-element.group {
+            border: 2px solid #bf3989;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #fafbfc;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .container-label {
+            position: absolute;
+            top: -10px;
+            left: 12px;
+            background: white;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 3px;
+            z-index: 5;
+        }
+
+        .container-element.row .container-label {
+            color: #8250df;
+            border: 1px solid #8250df;
+        }
+
+        .container-element.column .container-label {
+            color: #1f883d;
+            border: 1px solid #1f883d;
+        }
+
+        .container-element.group .container-label {
+            color: #bf3989;
+            border: 1px solid #bf3989;
+        }
+
+        .container-content {
+            min-height: 50px;
+            position: relative;
+        }
+
+        .container-content.can-drop {
+            outline: 2px dashed #0969da;
+            outline-offset: 4px;
+            background: rgba(9, 105, 218, 0.05);
+        }
+
+        .container-placeholder {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            padding: 20px;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* 表单字段样式 */
+        .form-field {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 0; /* Column内部通过gap控制间距 */
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .form-field:hover {
+            border-color: #0969da;
+            box-shadow: 0 2px 8px rgba(9, 105, 218, 0.1);
+        }
+
+        .form-field.selected,
+        .container-element.selected {
+            border-color: #0969da;
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2);
+        }
+
+        .field-controls {
+            position: absolute;
+            top: -12px;
+            right: 8px;
+            display: none;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .form-field:hover .field-controls,
+        .form-field.selected .field-controls,
+        .container-element:hover .field-controls,
+        .container-element.selected .field-controls {
+            display: flex;
+        }
+
+        .control-btn {
+            width: 26px;
+            height: 26px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #f6f8fa;
+            border-color: #0969da;
+            transform: scale(1.1);
+        }
+
+        .field-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #24292f;
+        }
+
+        .field-input, .field-select, .field-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .field-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .field-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 右侧属性面板 */
+        .right-panel {
+            width: 320px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+
+        .config-section {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .config-title {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #24292f;
+        }
+
+        .config-item {
+            margin-bottom: 16px;
+        }
+
+        .config-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #24292f;
+            font-size: 13px;
+        }
+
+        .config-input, .config-select, .config-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .config-textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .config-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        /* 选项配置 */
+        .options-config {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            background: #fafbfc;
+        }
+
+        .option-item {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .option-input {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .remove-option {
+            background: #da3633;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            width: 26px;
+            height: 26px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .add-option {
+            background: #0969da;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        /* 预览模式 */
+        .preview-mode .form-field,
+        .preview-mode .container-element {
+            cursor: default;
+        }
+
+        .preview-mode .field-controls {
+            display: none !important;
+        }
+
+        .preview-mode .container-label {
+            display: none !important;
+        }
+
+        .preview-mode .container-element {
+            border-color: transparent;
+        }
+
+        .preview-mode .container-element.row,
+        .preview-mode .container-element.group {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .preview-mode .container-element.column {
+            background: transparent;
+            border: none;
+            padding: 8px;
+        }
+
+        .preview-mode .form-field {
+            pointer-events: auto;
+        }
+
+        /* 预览表单提交按钮 */
+        .preview-submit-bar {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f6f8fa;
+            border-radius: 6px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .submit-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .submit-btn.primary {
+            background: #0969da;
+            color: white;
+        }
+
+        .submit-btn.primary:hover {
+            background: #0550ae;
+        }
+
+        .submit-btn.secondary {
+            background: white;
+            color: #24292f;
+            border: 1px solid #d0d7de;
+        }
+
+        .submit-btn.secondary:hover {
+            background: #f6f8fa;
+        }
+
+        /* 表单数据显示 */
+        .form-data-display {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .form-data-display pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* 隐藏文件输入 */
+        .hidden-file-input {
+            display: none;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            color: #656d76;
+            padding: 40px 20px;
+        }
+
+        /* 拖拽层级提示 */
+        .drag-hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+        }
+
+        .drag-hint.show {
+            display: block;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .left-panel {
+                width: 240px;
+            }
+            .right-panel {
+                width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 拖拽提示 -->
+    <div class="drag-hint" id="dragHint"></div>
+
+    <!-- 顶部工具栏 -->
+    <div class="toolbar">
+        <div class="toolbar-title">🎨 动态表单生成器 Pro</div>
+        <button class="btn" id="importBtn">📁 导入</button>
+        <button class="btn" id="exportBtn">💾 导出</button>
+        <button class="btn danger" id="clearBtn">🗑️ 清空</button>
+        <button class="btn primary" id="previewBtn">👀 预览</button>
+        <button class="btn success" id="previewFormBtn" style="display:none;">📋 预览表单</button>
+        <input type="file" class="hidden-file-input" id="fileInput" accept=".json">
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 左侧组件面板 -->
+        <div class="left-panel" id="leftPanel">
+            <!-- 布局组件 -->
+            <div class="panel-section">
+                <div class="section-title" onclick="toggleSection(this)">
+                    <span>📐 布局组件</span>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="component-list expanded">
+                    <div class="component-item" draggable="true" data-type="row" data-level="1">
+                        <div class="component-icon layout">⬌</div>
+                        <div>
+                            <div>行容器 (Row)</div>
+                            <div class="component-desc">自动换行</div>
+                        </div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="column" data-level="2">
+                        <div class="component-icon layout">⬍</div>
+                        <div>
+                            <div>列容器 (Column)</div>
+                            <div class="component-desc">放入Row中</div>
+                        </div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="group" data-level="1">
+                        <div class="component-icon layout">▦</div>
+                        <div>
+                            <div>分组 (Group)</div>
+                            <div class="component-desc">逻辑分组</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表单组件 -->
+            <div class="panel-section">
+                <div class="section-title" onclick="toggleSection(this)">
+                    <span>📝 表单组件</span>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="component-list expanded">
+                    <div class="component-item" draggable="true" data-type="input" data-level="3">
+                        <div class="component-icon form">T</div>
+                        <div>文本输入框</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="textarea" data-level="3">
+                        <div class="component-icon form">≡</div>
+                        <div>多行文本框</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="select" data-level="3">
+                        <div class="component-icon form">▼</div>
+                        <div>下拉选择器</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="radio" data-level="3">
+                        <div class="component-icon form">◉</div>
+                        <div>单选按钮组</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="checkbox" data-level="3">
+                        <div class="component-icon form">☑</div>
+                        <div>复选框</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="number" data-level="3">
+                        <div class="component-icon form">#</div>
+                        <div>数字输入框</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="date" data-level="3">
+                        <div class="component-icon form">📅</div>
+                        <div>日期选择器</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="email" data-level="3">
+                        <div class="component-icon form">@</div>
+                        <div>邮箱输入框</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="tel" data-level="3">
+                        <div class="component-icon form">📞</div>
+                        <div>电话输入框</div>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="url" data-level="3">
+                        <div class="component-icon form">🔗</div>
+                        <div>URL输入框</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间画布区域 -->
+        <div class="canvas-area">
+            <div class="canvas">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-placeholder" id="dropPlaceholder">
+                        拖拽左侧组件到这里开始创建表单
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧属性面板 -->
+        <div class="right-panel" id="rightPanel">
+            <div class="config-section">
+                <div class="config-title">属性配置</div>
+                <div id="fieldConfig">
+                    <div class="empty-state">
+                        选择一个字段或容器来配置属性
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <div class="config-title">实时预览</div>
+                <div id="livePreview">
+                    <div class="empty-state">
+                        预览区域
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换面板折叠
+        function toggleSection(element) {
+            const toggle = element.querySelector('.section-toggle');
+            const list = element.nextElementSibling;
+            
+            list.classList.toggle('expanded');
+            toggle.classList.toggle('collapsed');
+        }
+
+        // 拖拽层级规则
+        const DRAG_RULES = {
+            row: { canDropIn: ['dropZone', 'group'], canContain: ['column'] },
+            column: { canDropIn: ['row'], canContain: ['input', 'textarea', 'select', 'radio', 'checkbox', 'number', 'date', 'email', 'tel', 'url'] },
+            group: { canDropIn: ['dropZone'], canContain: ['row', 'column', 'input', 'textarea', 'select', 'radio', 'checkbox', 'number', 'date', 'email', 'tel', 'url'] },
+            // 表单组件
+            input: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            textarea: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            select: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            radio: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            checkbox: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            number: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            date: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            email: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            tel: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] },
+            url: { canDropIn: ['column', 'group', 'dropZone'], canContain: [] }
+        };
+
+        class FormBuilder {
+            constructor() {
+                this.elements = [];
+                this.selectedElement = null;
+                this.isPreviewMode = false;
+                this.elementIdCounter = 1;
+                this.currentDragType = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.setupDragAndDrop();
+                this.render();
+            }
+
+            setupEventListeners() {
+                document.getElementById('importBtn').addEventListener('click', () => this.importSchema());
+                document.getElementById('exportBtn').addEventListener('click', () => this.exportSchema());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearCanvas());
+                document.getElementById('previewBtn').addEventListener('click', () => this.togglePreview());
+                document.getElementById('previewFormBtn').addEventListener('click', () => this.showPreviewForm());
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileImport(e));
+
+                // 点击空白区域取消选择（仅编辑模式）
+                document.addEventListener('click', (e) => {
+                    if (this.isPreviewMode) return; // 预览模式不取消选择
+                    
+                    if (!e.target.closest('.form-field') && 
+                        !e.target.closest('.container-element') && 
+                        !e.target.closest('.right-panel') &&
+                        !e.target.closest('.control-btn')) {
+                        this.selectElement(null);
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Delete' && this.selectedElement && !e.target.closest('.config-input, .option-input')) {
+                        e.preventDefault();
+                        this.removeElement(this.selectedElement.id);
+                    }
+                });
+            }
+
+            setupDragAndDrop() {
+                const componentItems = document.querySelectorAll('.component-item');
+                
+                componentItems.forEach(item => {
+                    item.addEventListener('dragstart', (e) => {
+                        const type = item.dataset.type;
+                        this.currentDragType = type;
+                        e.dataTransfer.setData('text/plain', type);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    });
+
+                    item.addEventListener('dragend', () => {
+                        this.currentDragType = null;
+                        this.hideAllDropHints();
+                    });
+                });
+
+                this.setupMainDropZone();
+            }
+
+            setupMainDropZone() {
+                const zone = document.getElementById('dropZone');
+
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (this.canDropInZone('dropZone', this.currentDragType)) {
+                        e.dataTransfer.dropEffect = 'copy';
+                        zone.classList.add('drag-over');
+                    } else {
+                        e.dataTransfer.dropEffect = 'none';
+                        this.showDragHint('该组件不能直接放在画布上');
+                    }
+                });
+
+                zone.addEventListener('dragleave', (e) => {
+                    if (!zone.contains(e.relatedTarget)) {
+                        zone.classList.remove('drag-over');
+                        this.hideDragHint();
+                    }
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    zone.classList.remove('drag-over');
+                    this.hideDragHint();
+                    
+                    const componentType = e.dataTransfer.getData('text/plain');
+                    if (componentType && this.canDropInZone('dropZone', componentType)) {
+                        this.addElement(componentType, null);
+                    }
+                });
+            }
+
+            canDropInZone(zoneType, dragType) {
+                if (!dragType || !DRAG_RULES[dragType]) return false;
+                return DRAG_RULES[dragType].canDropIn.includes(zoneType);
+            }
+
+            canContainType(containerType, childType) {
+                if (!containerType || !childType) return false;
+                if (!DRAG_RULES[containerType]) return false;
+                return DRAG_RULES[containerType].canContain.includes(childType);
+            }
+
+            showDragHint(message) {
+                const hint = document.getElementById('dragHint');
+                hint.textContent = message;
+                hint.classList.add('show');
+            }
+
+            hideDragHint() {
+                const hint = document.getElementById('dragHint');
+                hint.classList.remove('show');
+            }
+
+            hideAllDropHints() {
+                document.querySelectorAll('.container-content').forEach(el => {
+                    el.classList.remove('can-drop');
+                });
+            }
+
+            addElement(type, parentId = null) {
+                const element = this.createElement(type);
+                
+                if (parentId) {
+                    const parent = this.findElementById(parentId, this.elements);
+                    if (parent && parent.children) {
+                        parent.children.push(element);
+                    }
+                } else {
+                    this.elements.push(element);
+                }
+                
+                this.render();
+                this.selectElement(element);
+            }
+
+            createElement(type) {
+                const isLayout = ['row', 'column', 'group'].includes(type);
+                
+                const element = {
+                    id: `element_${this.elementIdCounter++}`,
+                    type: type,
+                    label: this.getDefaultLabel(type),
+                    children: isLayout ? [] : null
+                };
+
+                // Column 特有属性
+                if (type === 'column') {
+                    element.span = 6; // 默认占6列（半宽）
+                }
+
+                if (!isLayout) {
+                    element.placeholder = '';
+                    element.required = false;
+                    
+                    if (type === 'select' || type === 'radio') {
+                        element.options = [
+                            { label: '选项1', value: 'option1' },
+                            { label: '选项2', value: 'option2' }
+                        ];
+                    }
+
+                    switch (type) {
+                        case 'number':
+                            element.min = '';
+                            element.max = '';
+                            element.step = '1';
+                            break;
+                        case 'textarea':
+                            element.rows = 4;
+                            break;
+                        case 'email':
+                            element.placeholder = '请输入邮箱地址';
+                            break;
+                        case 'tel':
+                            element.placeholder = '请输入电话号码';
+                            break;
+                        case 'url':
+                            element.placeholder = '请输入网址';
+                            break;
+                    }
+                }
+
+                return element;
+            }
+
+            getDefaultLabel(type) {
+                const labels = {
+                    row: '行容器',
+                    column: '列容器',
+                    group: '分组',
+                    input: '文本输入',
+                    textarea: '多行文本',
+                    select: '下拉选择',
+                    radio: '单选选择',
+                    checkbox: '勾选项',
+                    number: '数字输入',
+                    date: '日期选择',
+                    email: '邮箱输入',
+                    tel: '电话输入',
+                    url: '网址输入'
+                };
+                return labels[type] || '字段';
+            }
+
+            findElementById(id, elements) {
+                for (const element of elements) {
+                    if (element.id === id) return element;
+                    if (element.children) {
+                        const found = this.findElementById(id, element.children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            render() {
+                const dropZone = document.getElementById('dropZone');
+                
+                if (this.elements.length === 0) {
+                    dropZone.innerHTML = '<div class="drop-placeholder" id="dropPlaceholder">拖拽左侧组件到这里开始创建表单</div>';
+                } else {
+                    dropZone.innerHTML = this.renderElements(this.elements);
+                    
+                    if (!this.isPreviewMode) {
+                        this.bindElementEvents();
+                        this.setupNestedDropZones();
+                    }
+                }
+                
+                dropZone.classList.toggle('preview-mode', this.isPreviewMode);
+            }
+
+            renderElements(elements) {
+                return elements.map(element => this.renderElement(element)).join('');
+            }
+
+            // 用于“预览表单”新窗口：仅渲染表单本体（不包含编辑控件/容器标题）
+            renderElementsForForm(elements) {
+                return (elements || []).map(element => this.renderElementForForm(element)).join('');
+            }
+
+            renderElementForForm(element) {
+                const isLayout = ['row', 'column', 'group'].includes(element.type);
+                if (isLayout) return this.renderContainerForForm(element);
+                return this.renderFieldForForm(element);
+            }
+
+            renderContainerForForm(element) {
+                const children = element.children || [];
+                const childrenHtml = children.length > 0 ? this.renderElementsForForm(children) : '';
+
+                // Column 容器添加栅格类
+                const spanClass = element.type === 'column' ? `col-span-${element.span || 6}` : '';
+
+                return `
+                    <div class="container-element ${element.type} ${spanClass}" data-element-id="${element.id}">
+                        <div class="container-content">
+                            ${childrenHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderFieldForForm(element) {
+                const fieldId = element.id; // 预览表单页面使用原始 id，避免“preview_”前缀
+                let fieldHtml = '';
+
+                switch (element.type) {
+                    case 'input':
+                        fieldHtml = `<input type="text" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'textarea':
+                        fieldHtml = `<textarea class="field-textarea" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" rows="${element.rows || 4}" ${element.required ? 'required' : ''}></textarea>`;
+                        break;
+                    case 'select':
+                        const options = element.options || [];
+                        fieldHtml = `<select class="field-select" id="${fieldId}" name="${element.id}" ${element.required ? 'required' : ''}>
+                            <option value="">请选择...</option>
+                            ${options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+                        </select>`;
+                        break;
+                    case 'radio':
+                        const radioOptions = element.options || [];
+                        fieldHtml = radioOptions.map((opt, idx) =>
+                            `<div class="field-checkbox">
+                                <input type="radio" name="${element.id}" value="${opt.value}" id="${fieldId}_${idx}" ${element.required && idx === 0 ? 'required' : ''}>
+                                <label for="${fieldId}_${idx}">${opt.label}</label>
+                            </div>`
+                        ).join('');
+                        break;
+                    case 'checkbox':
+                        fieldHtml = `<div class="field-checkbox">
+                            <input type="checkbox" id="${fieldId}" name="${element.id}" ${element.required ? 'required' : ''}>
+                            <label for="${fieldId}">${element.placeholder || '同意此项'}</label>
+                        </div>`;
+                        break;
+                    case 'number':
+                        fieldHtml = `<input type="number" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" 
+                            ${element.min ? `min="${element.min}"` : ''} 
+                            ${element.max ? `max="${element.max}"` : ''} 
+                            ${element.step ? `step="${element.step}"` : ''} 
+                            ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'date':
+                        fieldHtml = `<input type="date" class="field-input" id="${fieldId}" name="${element.id}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'email':
+                        fieldHtml = `<input type="email" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'tel':
+                        fieldHtml = `<input type="tel" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'url':
+                        fieldHtml = `<input type="url" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                }
+
+                return `
+                    <div class="form-field" data-element-id="${element.id}">
+                        <div class="field-label">${element.label}${element.required ? ' *' : ''}</div>
+                        ${fieldHtml}
+                    </div>
+                `;
+            }
+
+            renderElement(element) {
+                const isLayout = ['row', 'column', 'group'].includes(element.type);
+                const selectedClass = this.selectedElement && this.selectedElement.id === element.id ? 'selected' : '';
+                
+                if (isLayout) {
+                    return this.renderContainer(element, selectedClass);
+                } else {
+                    return this.renderField(element, selectedClass);
+                }
+            }
+
+            renderContainer(element, selectedClass) {
+                const children = element.children || [];
+                const childrenHtml = children.length > 0 
+                    ? this.renderElements(children)
+                    : `<div class="container-placeholder">拖拽${element.type === 'row' ? 'Column容器' : '组件'}到这里</div>`;
+
+                // Column容器添加栅格类
+                const spanClass = element.type === 'column' ? `col-span-${element.span || 6}` : '';
+
+                return `
+                    <div class="container-element ${element.type} ${spanClass} ${selectedClass}" data-element-id="${element.id}">
+                        <div class="container-label">${element.label}${element.type === 'column' ? ` (${element.span}/12)` : ''}</div>
+                        <div class="field-controls">
+                            <button class="control-btn" onclick="formBuilder.moveElementUp('${element.id}')" title="上移">↑</button>
+                            <button class="control-btn" onclick="formBuilder.moveElementDown('${element.id}')" title="下移">↓</button>
+                            <button class="control-btn" onclick="formBuilder.duplicateElement('${element.id}')" title="复制">📋</button>
+                            <button class="control-btn" onclick="formBuilder.removeElement('${element.id}')" title="删除">×</button>
+                        </div>
+                        <div class="container-content" data-container-id="${element.id}" data-container-type="${element.type}">
+                            ${childrenHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderField(element, selectedClass) {
+                const fieldId = this.isPreviewMode ? element.id : `preview_${element.id}`;
+                let fieldHtml = '';
+                
+                switch (element.type) {
+                    case 'input':
+                        fieldHtml = `<input type="text" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'textarea':
+                        fieldHtml = `<textarea class="field-textarea" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" rows="${element.rows || 4}" ${element.required ? 'required' : ''}></textarea>`;
+                        break;
+                    case 'select':
+                        const options = element.options || [];
+                        fieldHtml = `<select class="field-select" id="${fieldId}" name="${element.id}" ${element.required ? 'required' : ''}>
+                            <option value="">请选择...</option>
+                            ${options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+                        </select>`;
+                        break;
+                    case 'radio':
+                        const radioOptions = element.options || [];
+                        fieldHtml = radioOptions.map((opt, idx) => 
+                            `<div class="field-checkbox">
+                                <input type="radio" name="${element.id}" value="${opt.value}" id="${fieldId}_${idx}" ${element.required && idx === 0 ? 'required' : ''}>
+                                <label for="${fieldId}_${idx}">${opt.label}</label>
+                            </div>`
+                        ).join('');
+                        break;
+                    case 'checkbox':
+                        fieldHtml = `<div class="field-checkbox">
+                            <input type="checkbox" id="${fieldId}" name="${element.id}" ${element.required ? 'required' : ''}>
+                            <label for="${fieldId}">${element.placeholder || '同意此项'}</label>
+                        </div>`;
+                        break;
+                    case 'number':
+                        fieldHtml = `<input type="number" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" 
+                            ${element.min ? `min="${element.min}"` : ''} 
+                            ${element.max ? `max="${element.max}"` : ''} 
+                            ${element.step ? `step="${element.step}"` : ''} 
+                            ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'date':
+                        fieldHtml = `<input type="date" class="field-input" id="${fieldId}" name="${element.id}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'email':
+                        fieldHtml = `<input type="email" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'tel':
+                        fieldHtml = `<input type="tel" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                    case 'url':
+                        fieldHtml = `<input type="url" class="field-input" id="${fieldId}" name="${element.id}" placeholder="${element.placeholder}" ${element.required ? 'required' : ''}>`;
+                        break;
+                }
+
+                return `
+                    <div class="form-field ${selectedClass}" data-element-id="${element.id}">
+                        <div class="field-controls">
+                            <button class="control-btn" onclick="formBuilder.moveElementUp('${element.id}')" title="上移">↑</button>
+                            <button class="control-btn" onclick="formBuilder.moveElementDown('${element.id}')" title="下移">↓</button>
+                            <button class="control-btn" onclick="formBuilder.duplicateElement('${element.id}')" title="复制">📋</button>
+                            <button class="control-btn" onclick="formBuilder.removeElement('${element.id}')" title="删除">×</button>
+                        </div>
+                        <div class="field-label">${element.label}${element.required ? ' *' : ''}</div>
+                        ${fieldHtml}
+                    </div>
+                `;
+            }
+
+            setupNestedDropZones() {
+                const containers = document.querySelectorAll('.container-content');
+                containers.forEach(container => {
+                    const containerId = container.dataset.containerId;
+                    const containerType = container.dataset.containerType;
+                    
+                    container.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if (this.canContainType(containerType, this.currentDragType)) {
+                            e.dataTransfer.dropEffect = 'copy';
+                            container.classList.add('can-drop');
+                            this.hideDragHint();
+                        } else {
+                            e.dataTransfer.dropEffect = 'none';
+                            const hints = {
+                                row: '行容器只能放Column容器',
+                                column: 'Column容器只能放表单组件',
+                                group: '分组可以放任意组件'
+                            };
+                            this.showDragHint(hints[containerType] || '不能放在这里');
+                        }
+                    });
+
+                    container.addEventListener('dragleave', (e) => {
+                        e.stopPropagation();
+                        if (!container.contains(e.relatedTarget)) {
+                            container.classList.remove('can-drop');
+                        }
+                    });
+
+                    container.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        container.classList.remove('can-drop');
+                        this.hideDragHint();
+                        
+                        const componentType = e.dataTransfer.getData('text/plain');
+                        if (componentType && this.canContainType(containerType, componentType)) {
+                            this.addElement(componentType, containerId);
+                        }
+                    });
+                });
+            }
+
+            bindElementEvents() {
+                if (this.isPreviewMode) return;
+                
+                const elements = document.querySelectorAll('.form-field, .container-element');
+                elements.forEach(element => {
+                    element.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const elementId = element.dataset.elementId;
+                        const foundElement = this.findElementById(elementId, this.elements);
+                        if (foundElement) {
+                            this.selectElement(foundElement);
+                        }
+                    });
+                });
+            }
+
+            selectElement(element) {
+                this.selectedElement = element;
+                this.render();
+                this.renderElementConfig();
+                this.renderLivePreview();
+            }
+
+            renderElementConfig() {
+                const configDiv = document.getElementById('fieldConfig');
+                
+                if (!this.selectedElement) {
+                    configDiv.innerHTML = '<div class="empty-state">选择一个字段或容器来配置属性</div>';
+                    return;
+                }
+
+                const element = this.selectedElement;
+                const isLayout = ['row', 'column', 'group'].includes(element.type);
+
+                let configHtml = `
+                    <div class="config-item">
+                        <label class="config-label">标签/标题</label>
+                        <input type="text" class="config-input" value="${element.label}" 
+                               onchange="formBuilder.updateElement('label', this.value)">
+                    </div>
+                `;
+
+                // Column 特有配置
+                if (element.type === 'column') {
+                    configHtml += `
+                        <div class="config-item">
+                            <label class="config-label">列宽 (Span) - 12栅格系统</label>
+                            <select class="config-select" onchange="formBuilder.updateElement('span', parseInt(this.value))">
+                                <option value="1" ${element.span === 1 ? 'selected' : ''}>1/12 (8.3%)</option>
+                                <option value="2" ${element.span === 2 ? 'selected' : ''}>2/12 (16.7%)</option>
+                                <option value="3" ${element.span === 3 ? 'selected' : ''}>3/12 (25%)</option>
+                                <option value="4" ${element.span === 4 ? 'selected' : ''}>4/12 (33.3%)</option>
+                                <option value="5" ${element.span === 5 ? 'selected' : ''}>5/12 (41.7%)</option>
+                                <option value="6" ${element.span === 6 ? 'selected' : ''}>6/12 (50%)</option>
+                                <option value="7" ${element.span === 7 ? 'selected' : ''}>7/12 (58.3%)</option>
+                                <option value="8" ${element.span === 8 ? 'selected' : ''}>8/12 (66.7%)</option>
+                                <option value="9" ${element.span === 9 ? 'selected' : ''}>9/12 (75%)</option>
+                                <option value="10" ${element.span === 10 ? 'selected' : ''}>10/12 (83.3%)</option>
+                                <option value="11" ${element.span === 11 ? 'selected' : ''}>11/12 (91.7%)</option>
+                                <option value="12" ${element.span === 12 ? 'selected' : ''}>12/12 (100%)</option>
+                            </select>
+                        </div>
+                    `;
+                }
+
+                if (!isLayout) {
+                    configHtml += `
+                        <div class="config-item">
+                            <label class="config-label">占位符文本</label>
+                            <input type="text" class="config-input" value="${element.placeholder || ''}" 
+                                   onchange="formBuilder.updateElement('placeholder', this.value)">
+                        </div>
+                        <div class="config-item">
+                            <div class="config-checkbox">
+                                <input type="checkbox" id="requiredCheck" ${element.required ? 'checked' : ''} 
+                                       onchange="formBuilder.updateElement('required', this.checked)">
+                                <label for="requiredCheck">必填字段</label>
+                            </div>
+                        </div>
+                    `;
+
+                    if (element.type === 'select' || element.type === 'radio') {
+                        configHtml += this.renderOptionsConfig(element);
+                    } else if (element.type === 'number') {
+                        configHtml += `
+                            <div class="config-item">
+                                <label class="config-label">最小值</label>
+                                <input type="number" class="config-input" value="${element.min || ''}" 
+                                       onchange="formBuilder.updateElement('min', this.value)">
+                            </div>
+                            <div class="config-item">
+                                <label class="config-label">最大值</label>
+                                <input type="number" class="config-input" value="${element.max || ''}" 
+                                       onchange="formBuilder.updateElement('max', this.value)">
+                            </div>
+                            <div class="config-item">
+                                <label class="config-label">步长</label>
+                                <input type="number" class="config-input" value="${element.step || 1}" 
+                                       onchange="formBuilder.updateElement('step', this.value)">
+                            </div>
+                        `;
+                    } else if (element.type === 'textarea') {
+                        configHtml += `
+                            <div class="config-item">
+                                <label class="config-label">行数</label>
+                                <input type="number" class="config-input" value="${element.rows || 4}" min="2" max="20"
+                                       onchange="formBuilder.updateElement('rows', parseInt(this.value))">
+                            </div>
+                        `;
+                    }
+                }
+
+                configDiv.innerHTML = configHtml;
+            }
+
+            renderOptionsConfig(element) {
+                const options = element.options || [];
+                return `
+                    <div class="config-item">
+                        <label class="config-label">选项配置</label>
+                        <div class="options-config">
+                            <div id="optionsList">
+                                ${options.map((opt, index) => `
+                                    <div class="option-item">
+                                        <input type="text" class="option-input" value="${opt.label}" 
+                                               placeholder="选项文本" onchange="formBuilder.updateOption(${index}, 'label', this.value)">
+                                        <input type="text" class="option-input" value="${opt.value}" 
+                                               placeholder="选项值" onchange="formBuilder.updateOption(${index}, 'value', this.value)">
+                                        <button class="remove-option" onclick="formBuilder.removeOption(${index})">×</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="add-option" onclick="formBuilder.addOption()">+ 添加选项</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateElement(property, value) {
+                if (this.selectedElement) {
+                    this.selectedElement[property] = value;
+                    this.render();
+                    this.renderElementConfig();
+                    this.renderLivePreview();
+                }
+            }
+
+            updateOption(index, property, value) {
+                if (this.selectedElement && this.selectedElement.options) {
+                    this.selectedElement.options[index][property] = value;
+                    this.render();
+                    this.renderLivePreview();
+                }
+            }
+
+            addOption() {
+                if (this.selectedElement && this.selectedElement.options) {
+                    this.selectedElement.options.push({ 
+                        label: `选项${this.selectedElement.options.length + 1}`, 
+                        value: `option${this.selectedElement.options.length + 1}` 
+                    });
+                    this.renderElementConfig();
+                    this.render();
+                }
+            }
+
+            removeOption(index) {
+                if (this.selectedElement && this.selectedElement.options && this.selectedElement.options.length > 1) {
+                    this.selectedElement.options.splice(index, 1);
+                    this.renderElementConfig();
+                    this.render();
+                }
+            }
+
+            renderLivePreview() {
+                const previewDiv = document.getElementById('livePreview');
+                
+                if (!this.selectedElement) {
+                    previewDiv.innerHTML = '<div class="empty-state">预览区域</div>';
+                    return;
+                }
+
+                const previewHtml = `
+                    <div style="padding: 16px; border: 1px solid #e0e0e0; border-radius: 6px; background: white;">
+                        ${this.renderElement(this.selectedElement)}
+                    </div>
+                `;
+                
+                previewDiv.innerHTML = previewHtml;
+            }
+
+            moveElementUp(elementId) {
+                this.moveElement(elementId, -1);
+            }
+
+            moveElementDown(elementId) {
+                this.moveElement(elementId, 1);
+            }
+
+            moveElement(elementId, direction) {
+                const parent = this.findParentOfElement(elementId, this.elements);
+                const array = parent ? parent.children : this.elements;
+                const index = array.findIndex(e => e.id === elementId);
+                
+                if (index === -1) return;
+                
+                const newIndex = index + direction;
+                if (newIndex >= 0 && newIndex < array.length) {
+                    [array[index], array[newIndex]] = [array[newIndex], array[index]];
+                    this.render();
+                }
+            }
+
+            findParentOfElement(elementId, elements, parent = null) {
+                for (const element of elements) {
+                    if (element.id === elementId) return parent;
+                    if (element.children) {
+                        const found = this.findParentOfElement(elementId, element.children, element);
+                        if (found !== null) return found;
+                    }
+                }
+                return null;
+            }
+
+            duplicateElement(elementId) {
+                const element = this.findElementById(elementId, this.elements);
+                if (!element) return;
+
+                const newElement = JSON.parse(JSON.stringify(element));
+                this.updateElementIds(newElement);
+                newElement.label = element.label + ' (副本)';
+
+                const parent = this.findParentOfElement(elementId, this.elements);
+                const array = parent ? parent.children : this.elements;
+                const index = array.findIndex(e => e.id === elementId);
+                
+                array.splice(index + 1, 0, newElement);
+                this.render();
+            }
+
+            updateElementIds(element) {
+                element.id = `element_${this.elementIdCounter++}`;
+                if (element.children) {
+                    element.children.forEach(child => this.updateElementIds(child));
+                }
+            }
+
+            removeElement(elementId) {
+                const parent = this.findParentOfElement(elementId, this.elements);
+                const array = parent ? parent.children : this.elements;
+                const index = array.findIndex(e => e.id === elementId);
+                
+                if (index !== -1) {
+                    array.splice(index, 1);
+                    if (this.selectedElement && this.selectedElement.id === elementId) {
+                        this.selectedElement = null;
+                    }
+                    this.render();
+                    this.renderElementConfig();
+                    this.renderLivePreview();
+                }
+            }
+
+            togglePreview() {
+                this.isPreviewMode = !this.isPreviewMode;
+                const btn = document.getElementById('previewBtn');
+                const previewFormBtn = document.getElementById('previewFormBtn');
+                const leftPanel = document.getElementById('leftPanel');
+                const rightPanel = document.getElementById('rightPanel');
+                
+                btn.textContent = this.isPreviewMode ? '🔧 编辑' : '👀 预览';
+                btn.classList.toggle('primary', !this.isPreviewMode);
+                
+                // 切换面板显示
+                if (this.isPreviewMode) {
+                    leftPanel.style.display = 'none';
+                    rightPanel.style.display = 'none';
+                    previewFormBtn.style.display = 'inline-block';
+                    this.selectElement(null);
+                } else {
+                    leftPanel.style.display = 'block';
+                    rightPanel.style.display = 'block';
+                    previewFormBtn.style.display = 'none';
+                }
+                
+                this.render();
+            }
+
+            showPreviewForm() {
+                // 创建新窗口显示预览表单
+                const formHtml = this.generatePreviewFormHTML();
+                const newWindow = window.open('', '_blank', 'width=800,height=600');
+                if(newWindow){
+                    newWindow.document.write(formHtml);
+                    newWindow.document.close();
+                }
+            }
+
+            generatePreviewFormHTML() {
+                const formContent = this.renderElementsForForm(this.elements);
+                
+                return `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表单预览</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .form-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .form-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            color: #24292f;
+        }
+        .container-element.row .container-content {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .container-element.column {
+            flex-shrink: 0;
+        }
+        .container-element.column .container-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .col-span-1 { flex: 0 0 calc(8.333% - 10px); }
+        .col-span-2 { flex: 0 0 calc(16.666% - 10px); }
+        .col-span-3 { flex: 0 0 calc(25% - 10px); }
+        .col-span-4 { flex: 0 0 calc(33.333% - 10px); }
+        .col-span-5 { flex: 0 0 calc(41.666% - 10px); }
+        .col-span-6 { flex: 0 0 calc(50% - 10px); }
+        .col-span-7 { flex: 0 0 calc(58.333% - 10px); }
+        .col-span-8 { flex: 0 0 calc(66.666% - 10px); }
+        .col-span-9 { flex: 0 0 calc(75% - 10px); }
+        .col-span-10 { flex: 0 0 calc(83.333% - 10px); }
+        .col-span-11 { flex: 0 0 calc(91.666% - 10px); }
+        .col-span-12 { flex: 0 0 calc(100% - 10px); }
+        .form-field {
+            margin-bottom: 0;
+        }
+        .field-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #24292f;
+        }
+        .field-input, .field-select, .field-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .field-textarea {
+            resize: vertical;
+        }
+        .field-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .submit-bar {
+            margin-top: 32px;
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #0969da;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0550ae;
+        }
+        .btn-secondary {
+            background: white;
+            color: #24292f;
+            border: 1px solid #d0d7de;
+        }
+        .btn-secondary:hover {
+            background: #f6f8fa;
+        }
+        .result {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1 class="form-title">表单预览</h1>
+        <form id="previewForm">
+            ${formContent}
+            <div class="submit-bar">
+                <button type="submit" class="btn btn-primary">提交表单</button>
+                <button type="reset" class="btn btn-secondary">重置</button>
+            </div>
+        </form>
+        <div class="result" id="result">
+            <h3 style="margin-bottom: 12px;">提交的数据：</h3>
+            <pre id="resultData"></pre>
+        </div>
+    </div>
+    <script>
+        document.getElementById('previewForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            document.getElementById('resultData').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('result').classList.add('show');
+            
+            // 滚动到结果区域
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        document.getElementById('previewForm').addEventListener('reset', function() {
+            setTimeout(() => {
+                document.getElementById('result').classList.remove('show');
+            }, 100);
+        });
+    <\/script>
+</body>
+</html>
+                `;
+            }
+
+            clearCanvas() {
+                if (confirm('确定要清空所有内容吗？此操作不可恢复。')) {
+                    this.elements = [];
+                    this.selectedElement = null;
+                    this.elementIdCounter = 1;
+                    this.render();
+                    this.renderElementConfig();
+                    this.renderLivePreview();
+                }
+            }
+
+            exportSchema() {
+                const schema = {
+                    title: '动态表单',
+                    description: '通过表单生成器创建',
+                    version: '2.0',
+                    timestamp: new Date().toISOString(),
+                    elements: this.elements
+                };
+
+                const dataStr = JSON.stringify(schema, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `form-schema-${Date.now()}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log('Schema已导出', schema);
+            }
+
+            importSchema() {
+                document.getElementById('fileInput').click();
+            }
+
+            handleFileImport(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const schema = JSON.parse(e.target.result);
+                        
+                        if (!schema.elements || !Array.isArray(schema.elements)) {
+                            throw new Error('无效的Schema格式：缺少elements数组');
+                        }
+
+                        this.elements = schema.elements;
+                        this.selectedElement = null;
+                        
+                        const maxId = this.getMaxElementId(this.elements);
+                        this.elementIdCounter = maxId + 1;
+
+                        this.render();
+                        this.renderElementConfig();
+                        this.renderLivePreview();
+
+                        alert(`成功导入表单！共 ${this.countElements(this.elements)} 个元素`);
+                        
+                    } catch (error) {
+                        alert('导入失败：' + error.message);
+                        console.error('导入Schema失败：', error);
+                    }
+                };
+                
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            getMaxElementId(elements) {
+                let maxId = 0;
+                elements.forEach(element => {
+                    const match = element.id.match(/element_(\d+)/);
+                    if (match) {
+                        maxId = Math.max(maxId, parseInt(match[1]));
+                    }
+                    if (element.children) {
+                        maxId = Math.max(maxId, this.getMaxElementId(element.children));
+                    }
+                });
+                return maxId;
+            }
+
+            countElements(elements) {
+                let count = elements.length;
+                elements.forEach(element => {
+                    if (element.children) {
+                        count += this.countElements(element.children);
+                    }
+                });
+                return count;
+            }
+        }
+
+        // 初始化表单生成器
+        const formBuilder = new FormBuilder();
+        window.formBuilder = formBuilder;
+
+        // 阻止页面其他地方的拖拽
+        document.addEventListener('dragover', (e) => {
+            if (!e.target.closest('.drop-zone') && !e.target.closest('.container-content')) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            if (!e.target.closest('.drop-zone') && !e.target.closest('.container-content')) {
+                e.preventDefault();
+            }
+        });
+
+        console.log('✅ 动态表单生成器 Pro v2.1 已初始化');
+        console.log('📐 布局系统: Row (自动换行) > Column (垂直排列) > 表单组件');
+        console.log('🎯 栅格系统: 12列布局，Column支持1-12列宽');
+        console.log('🎨 预览模式: 保留输入值，支持表单提交');
+        console.log('');
+        console.log('使用场景示例：');
+        console.log('1. 两列布局: Row > Column(6) + Column(6)');
+        console.log('2. 三列布局: Row > Column(4) + Column(4) + Column(4)');
+        console.log('3. 侧边栏布局: Row > Column(3) + Column(9)');
+        console.log('4. 自动换行: Row > Column(4) + Column(4) + Column(4) + Column(6) [前3个一行，最后一个换行]');
+    </script>
+</body>
+</html>
