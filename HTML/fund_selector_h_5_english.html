@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fund Selector</title>
+
+  <!-- Choices.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+  <!-- noUiSlider for dual-handle range -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
+
+  <style>
+    :root{
+      --primary:#FF9400;
+      --btn:#1D3354;
+      --bg:#f6f7f9;
+    }
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto;background:var(--bg);}
+    header{background:var(--primary);color:#fff;padding:12px;text-align:center;font-weight:600;}
+    .container{padding:12px;padding-bottom:80px;}
+    .filter{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;}
+    .filter-group{margin-bottom:12px;}
+    label{font-size:13px;color:#333;margin-bottom:6px;display:block;}
+
+    .fund-types{display:flex;gap:12px;}
+    .fund-types label{font-size:13px;white-space:nowrap;}
+
+    .slider{margin:10px 0;}
+    .slider-value{font-size:12px;color:#666;}
+
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;}
+    th,td{padding:8px;font-size:13px;border-bottom:1px solid #eee;text-align:left;}
+    th{background:#fafafa;font-weight:600;}
+
+    .pagination{display:flex;justify-content:center;gap:10px;margin:10px 0;}
+    .pagination button{border:none;padding:6px 12px;border-radius:6px;background:#eee;}
+
+    .fixed-bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #ddd;padding:10px;display:flex;justify-content:space-between;align-items:center;}
+    .fixed-bar button{background:var(--btn);color:#fff;border:none;padding:8px 16px;border-radius:8px;}
+
+    .hidden{display:none;}
+
+    .compare-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .back{font-size:20px;cursor:pointer;}
+
+    .compare-table th,.compare-table td{text-align:center;}
+
+    .risk-1{color:#2ecc71;} .risk-7{color:#e74c3c;}
+  </style>
+</head>
+<body>
+
+<header>Fund Selector</header>
+
+<div class="container" id="listPage">
+
+  <div class="filter">
+    <div class="filter-group">
+      <label>Fund Type</label>
+      <div class="fund-types">
+        <label><input type="checkbox" checked> Type1</label>
+        <label><input type="checkbox" checked> Type2</label>
+        <label><input type="checkbox" checked> Type3</label>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>Country / Region</label>
+      <select id="region" multiple>
+        <option>United States</option>
+        <option>Europe</option>
+        <option>China</option>
+        <option>Japan</option>
+        <option>United Kingdom</option>
+        <option>Germany</option>
+        <option>France</option>
+        <option>Canada</option>
+        <option>Australia</option>
+        <option>India</option>
+        <option>Brazil</option>
+        <option>Singapore</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Return Rate (%)</label>
+      <div id="returnSlider" class="slider"></div>
+      <div class="slider-value" id="returnText"></div>
+    </div>
+
+    <div class="filter-group">
+      <label>Risk Level</label>
+      <div id="riskSlider" class="slider"></div>
+      <div class="slider-value" id="riskText"></div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Fund</th>
+        <th>Return (%)</th>
+        <th>Risk</th>
+        <th>Expense (%)</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <div class="pagination">
+    <button onclick="prevPage()">Prev</button>
+    <span id="pageInfo"></span>
+    <button onclick="nextPage()">Next</button>
+  </div>
+</div>
+
+<div class="container hidden" id="comparePage">
+  <div class="compare-header">
+    <div class="back" onclick="backToList()">&#60;</div>
+    <strong>Fund Comparison</strong>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th id="c1"></th>
+        <th id="c2"></th>
+        <th id="c3"></th>
+        <th id="c4"></th>
+        <th id="c5"></th>
+      </tr>
+    </thead>
+    <tbody id="compareBody"></tbody>
+  </table>
+</div>
+
+<div class="fixed-bar" id="fixedBar">
+  <span id="selectedCount">0 / 5 Selected</span>
+  <button onclick="goCompare()">Compare</button>
+</div>
+
+<script>
+  new Choices('#region', { removeItemButton:true });
+
+  const returnSlider = document.getElementById('returnSlider');
+  const riskSlider = document.getElementById('riskSlider');
+
+  noUiSlider.create(returnSlider, {
+    start: [2, 12],
+    connect: true,
+    range: { min: 0, max: 20 }
+  });
+
+  noUiSlider.create(riskSlider, {
+    start: [1, 6],
+    connect: true,
+    range: { min: 1, max: 7 }
+  });
+
+  const pageSize = 20; let page = 1;
+  const funds = Array.from({length:300},(_,i)=>({
+    id:i,
+    name:`Global Equity Fund ${i+1}`,
+    code:`GEF${1000+i}`,
+    return:+(Math.random()*8+1).toFixed(2),
+    risk:Math.ceil(Math.random()*6+1),
+    expense:+(Math.random()*1.2+0.3).toFixed(2)
+  }));
+
+  let selected=[];
+  let retRange=[2,12];
+  let riskRange=[1,6];
+
+  returnSlider.noUiSlider.on('update',v=>{ retRange=v.map(Number); returnText.textContent=`${retRange[0].toFixed(1)}% - ${retRange[1].toFixed(1)}%`; render(); });
+  riskSlider.noUiSlider.on('update',v=>{ riskRange=v.map(Number); riskText.textContent=`${riskRange[0]} - ${riskRange[1]}`; render(); });
+
+  function filtered(){ return funds.filter(f=>f.return>=retRange[0] && f.return<=retRange[1] && f.risk>=riskRange[0] && f.risk<=riskRange[1]); }
+
+  function render(){
+    const list=filtered();
+    const start=(page-1)*pageSize;
+    tableBody.innerHTML=list.slice(start,start+pageSize).map(f=>`
+      <tr>
+        <td><input type="checkbox" ${selected.includes(f.id)?'checked':''} onchange="toggle(${f.id})"></td>
+        <td>${f.name}<br><small>${f.code}</small></td>
+        <td>${f.return}%</td>
+        <td>${f.risk}</td>
+        <td>${f.expense}%</td>
+      </tr>`).join('');
+    pageInfo.textContent=`Page ${page}`;
+    selectedCount.textContent=`${selected.length} / 5 Selected`;
+  }
+
+  function toggle(id){ if(selected.includes(id)) selected=selected.filter(i=>i!==id); else if(selected.length<5) selected.push(id); render(); }
+  function prevPage(){ if(page>1){page--; render();}}
+  function nextPage(){ if(page*pageSize<filtered().length){page++; render();}}
+
+  function goCompare(){
+    if(!selected.length) return alert('Select funds first');
+    listPage.classList.add('hidden'); fixedBar.classList.add('hidden'); comparePage.classList.remove('hidden');
+    const fs=funds.filter(f=>selected.includes(f.id));
+    ['c1','c2','c3','c4','c5'].forEach((id,i)=>document.getElementById(id).textContent=fs[i]?fs[i].name:'');
+    compareBody.innerHTML=['Return (%)','Risk','Expense (%)'].map((m,idx)=>`<tr><td>${m}</td>${fs.map(f=>`<td>${idx===0?f.return+'%':idx===1?f.risk:f.expense+'%'}</td>`).join('')}</tr>`).join('');
+  }
+
+  function backToList(){ comparePage.classList.add('hidden'); listPage.classList.remove('hidden'); fixedBar.classList.remove('hidden'); }
+
+  render();
+</script>
+</body>
+</html>
