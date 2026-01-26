@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fund Dashboard Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --primary:#FF9400;
+      --btn:#1D3354;
+      --bg:#f6f7f9;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto; background:var(--bg); }
+    header { padding:12px; background:var(--primary); color:#fff; text-align:center; font-weight:600; }
+
+    .container { padding:12px 12px 75px; max-width:100%; overflow-x:hidden; }
+
+    /* filters */
+    .filters { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+    .filters select, .filters input { padding:6px; border-radius:6px; border:1px solid #ddd; font-size:12px; width:100%; }
+
+    /* table */
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; display:block; overflow-x:auto; }
+    thead, tbody, tr { display:table; width:100%; table-layout:fixed; }
+    th, td { padding:8px 4px; font-size:11px; border-bottom:1px solid #eee; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    th { background:#fafafa; font-weight:600; }
+    
+    /* Column widths for better mobile display */
+    th:nth-child(1), td:nth-child(1) { width:8%; } /* checkbox */
+    th:nth-child(2), td:nth-child(2) { width:40%; } /* fund name */
+    th:nth-child(3), td:nth-child(3) { width:12%; } /* 3M */
+    th:nth-child(4), td:nth-child(4) { width:12%; } /* 1Y */
+    th:nth-child(5), td:nth-child(5) { width:12%; } /* Fee */
+    th:nth-child(6), td:nth-child(6) { width:16%; } /* Risk */
+
+    .group-row {
+      display:table;
+      width:100%;
+    }
+    .group-row td {
+      background:#f0f0f0;
+      font-weight:600;
+      font-size:12px;
+      display:table-cell;
+    }
+
+    .fund-name {
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .risk-1 { background:#e6f4ea; }
+    .risk-2 { background:#dff0e4; }
+    .risk-3 { background:#fff7e6; }
+    .risk-4 { background:#ffe8c2; }
+    .risk-5 { background:#ffd6a5; }
+    .risk-6 { background:#ffb703; }
+    .risk-7 { background:#ff8c69; }
+
+    /* improved pagination */
+    .pagination { 
+      display:flex; 
+      justify-content:center; 
+      align-items:center; 
+      gap:6px; 
+      margin:14px 0; 
+      flex-wrap:wrap;
+    }
+    .pagination button { 
+      padding:6px 10px; 
+      border-radius:8px; 
+      border:1px solid #ddd; 
+      background:#fff; 
+      cursor:pointer;
+      font-size:13px;
+      min-width:36px;
+    }
+    .pagination button:hover {
+      background:#f5f5f5;
+    }
+    .pagination button:disabled {
+      opacity:0.5;
+      cursor:not-allowed;
+    }
+    .pagination input {
+      width:45px;
+      padding:6px 4px;
+      border-radius:6px;
+      border:1px solid #ddd;
+      text-align:center;
+      font-size:13px;
+    }
+    .pagination .total-pages {
+      font-size:13px;
+      color:#666;
+      min-width:30px;
+      text-align:center;
+    }
+
+    /* fixed bar */
+    .fixed-bar {
+      position:fixed;
+      left:0; right:0; bottom:0;
+      padding:10px 12px;
+      background:#fff;
+      border-top:1px solid #eee;
+      z-index:1000;
+      box-shadow:0 -2px 8px rgba(0,0,0,0.05);
+    }
+    .fixed-bar button {
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:12px;
+      background:var(--btn);
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      transition:background 0.2s;
+    }
+    .fixed-bar button:active {
+      background:#152844;
+    }
+
+    /* chart page */
+    .hidden { display:none; }
+    .back { font-size:20px; margin-bottom:6px; cursor:pointer; }
+    
+    /* period switcher */
+    .period-switcher {
+      display:flex;
+      justify-content:center;
+      gap:6px;
+      margin-bottom:12px;
+      padding:8px;
+      background:#fff;
+      border-radius:10px;
+      flex-wrap:wrap;
+    }
+    .period-switcher button {
+      padding:6px 12px;
+      border:1px solid #ddd;
+      border-radius:6px;
+      background:#fff;
+      font-size:12px;
+      cursor:pointer;
+      transition:all 0.2s;
+      min-width:42px;
+    }
+    .period-switcher button:hover {
+      background:#f5f5f5;
+    }
+    .period-switcher button.active {
+      background:var(--btn);
+      color:#fff;
+      border-color:var(--btn);
+    }
+    
+    #chart { width:100%; height:240px; background:#fff; border-radius:12px; }
+  </style>
+</head>
+<body>
+<header>Fund Dashboard</header>
+
+<!-- LIST PAGE -->
+<div class="container" id="listPage">
+  <div class="filters">
+    <select id="trusteeFilter">
+      <option value="">All Trustees</option>
+      <option value="AIA">AIA</option>
+      <option value="HSBC">HSBC</option>
+    </select>
+    <select id="riskFilter">
+      <option value="">All Risk</option>
+      <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+      <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+    </select>
+    <input type="number" id="minReturn" placeholder="1Y % Min" />
+    <input type="number" id="maxReturn" placeholder="1Y % Max" />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Fund Name</th>
+        <th>3M</th>
+        <th>1Y</th>
+        <th>Fee</th>
+        <th>Risk</th>
+      </tr>
+    </thead>
+    <tbody id="fundBody"></tbody>
+  </table>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- CHART PAGE -->
+<div class="container hidden" id="chartPage">
+  <div class="back" onclick="goBack()">&lt;</div>
+  
+  <!-- Period Switcher -->
+  <div class="period-switcher">
+    <button data-period="1M" onclick="switchPeriod('1M')">1M</button>
+    <button data-period="3M" onclick="switchPeriod('3M')" class="active">3M</button>
+    <button data-period="6M" onclick="switchPeriod('6M')">6M</button>
+    <button data-period="1Y" onclick="switchPeriod('1Y')">1Y</button>
+    <button data-period="3Y" onclick="switchPeriod('3Y')">3Y</button>
+  </div>
+  
+  <div id="chart"></div>
+</div>
+
+<div class="fixed-bar">
+  <button onclick="goCompare()">Compare Selected Funds</button>
+</div>
+
+<script>
+/* ---------- mock backend data ---------- */
+const allFunds = [];
+const trustees = ['AIA','HSBC'];
+const schemas = ['Fund I','Fund II','Fund III'];
+let id = 1;
+
+trustees.forEach(t => {
+  schemas.forEach(s => {
+    const count = Math.floor(Math.random()*3)+2; // 2~4 funds per schema
+    for(let i=0;i<count;i++){
+      allFunds.push({
+        id: id++,
+        trustee: t,
+        schema: s,
+        group: `${t} - ${s}`,
+        name: `${t} Growth Fund ${id}`,
+        r3m: (Math.random()*5).toFixed(2)+'%',
+        r1y: (Math.random()*12).toFixed(2),
+        fee: (0.6+Math.random()).toFixed(2)+'%',
+        risk: Math.floor(Math.random()*7)+1
+      });
+    }
+  });
+});
+
+/* ---------- state ---------- */
+let page = 1;
+const pageSize = 20;
+const selected = new Set();
+let currentPeriod = '3M';
+let chartInstance = null;
+
+/* ---------- filtering ---------- */
+function getFiltered(){
+  return allFunds.filter(f => {
+    if (trusteeFilter.value && f.trustee !== trusteeFilter.value) return false;
+    if (riskFilter.value && String(f.risk) !== riskFilter.value) return false;
+    if (minReturn.value && f.r1y < minReturn.value) return false;
+    if (maxReturn.value && f.r1y > maxReturn.value) return false;
+    return true;
+  });
+}
+
+/* ---------- render table ---------- */
+function renderTable(){
+  const data = getFiltered();
+  const tbody = document.getElementById('fundBody');
+  tbody.innerHTML = '';
+
+  const start = (page-1)*pageSize;
+  const pageData = data.slice(start, start+pageSize);
+
+  let currentGroup = '';
+  pageData.forEach(f => {
+    if (f.group !== currentGroup) {
+      currentGroup = f.group;
+      const gr = document.createElement('tr');
+      gr.className = 'group-row';
+      gr.innerHTML = `<td colspan="6">${currentGroup}</td>`;
+      tbody.appendChild(gr);
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" ${selected.has(f.id)?'checked':''}></td>
+      <td class="fund-name">${f.name}</td>
+      <td>${f.r3m}</td>
+      <td>${f.r1y}%</td>
+      <td>${f.fee}</td>
+      <td class="risk-${f.risk}">${f.risk}</td>
+    `;
+    tr.querySelector('input').onchange = e => {
+      e.target.checked ? selected.add(f.id) : selected.delete(f.id);
+    };
+    tbody.appendChild(tr);
+  });
+
+  renderPagination(data.length);
+}
+
+/* ---------- improved pagination ---------- */
+function renderPagination(total){
+  const totalPages = Math.ceil(total / pageSize);
+  const p = document.getElementById('pagination');
+  p.innerHTML = '';
+  
+  // First page button
+  const firstBtn = document.createElement('button');
+  firstBtn.textContent = '1';
+  firstBtn.disabled = page === 1;
+  firstBtn.onclick = () => { page = 1; renderTable(); };
+  p.appendChild(firstBtn);
+  
+  // Previous button
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '<';
+  prevBtn.disabled = page === 1;
+  prevBtn.onclick = () => { if(page > 1) { page--; renderTable(); } };
+  p.appendChild(prevBtn);
+  
+  // Page input
+  const pageInput = document.createElement('input');
+  pageInput.type = 'number';
+  pageInput.min = 1;
+  pageInput.max = totalPages;
+  pageInput.value = page;
+  pageInput.onchange = (e) => {
+    let newPage = parseInt(e.target.value);
+    if (newPage < 1) newPage = 1;
+    if (newPage > totalPages) newPage = totalPages;
+    page = newPage;
+    renderTable();
+  };
+  pageInput.onkeypress = (e) => {
+    if (e.key === 'Enter') {
+      let newPage = parseInt(e.target.value);
+      if (newPage < 1) newPage = 1;
+      if (newPage > totalPages) newPage = totalPages;
+      page = newPage;
+      renderTable();
+    }
+  };
+  p.appendChild(pageInput);
+  
+  // Next button
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = '>';
+  nextBtn.disabled = page === totalPages;
+  nextBtn.onclick = () => { if(page < totalPages) { page++; renderTable(); } };
+  p.appendChild(nextBtn);
+  
+  // Total pages display
+  const totalSpan = document.createElement('span');
+  totalSpan.className = 'total-pages';
+  totalSpan.textContent = totalPages;
+  p.appendChild(totalSpan);
+}
+
+trusteeFilter.onchange = riskFilter.onchange = minReturn.oninput = maxReturn.oninput = () => {
+  page = 1; renderTable();
+};
+
+renderTable();
+
+/* ---------- compare ---------- */
+function goCompare(){
+  if (selected.size === 0) return alert('Select at least one fund');
+  listPage.classList.add('hidden');
+  chartPage.classList.remove('hidden');
+  currentPeriod = '3M';
+  updatePeriodButtons();
+  drawChart();
+}
+
+function goBack(){
+  chartPage.classList.add('hidden');
+  listPage.classList.remove('hidden');
+}
+
+/* ---------- period switcher ---------- */
+function switchPeriod(period){
+  currentPeriod = period;
+  updatePeriodButtons();
+  drawChart();
+}
+
+function updatePeriodButtons(){
+  document.querySelectorAll('.period-switcher button').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.period === currentPeriod) {
+      btn.classList.add('active');
+    }
+  });
+}
+
+/* ---------- chart data generation ---------- */
+function getChartDataPoints(period){
+  const configs = {
+    '1M': { count: 30, labels: Array.from({length:30}, (_,i)=>`D${i+1}`) },
+    '3M': { count: 12, labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'] },
+    '6M': { count: 6, labels: ['M1','M2','M3','M4','M5','M6'] },
+    '1Y': { count: 12, labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] },
+    '3Y': { count: 12, labels: ['Q1 Y1','Q2 Y1','Q3 Y1','Q4 Y1','Q1 Y2','Q2 Y2','Q3 Y2','Q4 Y2','Q1 Y3','Q2 Y3','Q3 Y3','Q4 Y3'] }
+  };
+  return configs[period] || configs['3M'];
+}
+
+function drawChart(){
+  if (!chartInstance) {
+    chartInstance = echarts.init(document.getElementById('chart'));
+  }
+  
+  const { count, labels } = getChartDataPoints(currentPeriod);
+  
+  const series = [...selected].map(id => {
+    const f = allFunds.find(x => x.id === id);
+    // Generate cumulative return data
+    let cumulative = 0;
+    const data = Array.from({length:count}, () => {
+      cumulative += (Math.random() * 2 - 0.5); // Random walk
+      return cumulative.toFixed(2);
+    });
+    
+    return {
+      name: f.name,
+      type: 'line',
+      data: data,
+      smooth: true
+    };
+  });
+
+  chartInstance.setOption({
+    tooltip:{ trigger:'axis' },
+    legend:{ top:10, left:'center', textStyle:{ fontSize:10 } },
+    grid:{ left:40, right:20, top:50, bottom:30 },
+    xAxis:{ type:'category', data:labels },
+    yAxis:{ type:'value', axisLabel:{ formatter:'{value}%' } },
+    series
+  }, true);
+}
+</script>
+</body>
+</html>
