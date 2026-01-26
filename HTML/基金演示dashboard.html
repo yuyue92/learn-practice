@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fund Dashboard Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --primary:#FF9400;
+      --btn:#1D3354;
+      --bg:#f6f7f9;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto; background:var(--bg); }
+    header { padding:12px; background:var(--primary); color:#fff; text-align:center; font-weight:600; }
+
+    .container { padding:12px 12px 86px; }
+
+    /* filters */
+    .filters { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+    .filters select, .filters input { padding:6px; border-radius:6px; border:1px solid #ddd; font-size:12px; width:100%; }
+
+    /* table */
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; }
+    th, td { padding:10px 8px; font-size:12px; border-bottom:1px solid #eee; text-align:left; white-space:nowrap; }
+    th { background:#fafafa; font-weight:600; }
+
+    .group-row td {
+      background:#f0f0f0;
+      font-weight:600;
+      font-size:13px;
+    }
+
+    .fund-name {
+      max-width:140px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .risk-1 { background:#e6f4ea; }
+    .risk-2 { background:#dff0e4; }
+    .risk-3 { background:#fff7e6; }
+    .risk-4 { background:#ffe8c2; }
+    .risk-5 { background:#ffd6a5; }
+    .risk-6 { background:#ffb703; }
+    .risk-7 { background:#ff8c69; }
+
+    /* pagination */
+    .pagination { display:flex; justify-content:center; gap:8px; margin:14px 0; }
+    .pagination button { padding:6px 12px; border-radius:8px; border:1px solid #ddd; background:#fff; }
+
+    /* fixed bar */
+    .fixed-bar {
+      position:fixed;
+      left:0; right:0; bottom:0;
+      padding:12px;
+      background:#fff;
+      border-top:1px solid #eee;
+    }
+    .fixed-bar button {
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:12px;
+      background:var(--btn);
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+    }
+
+    /* chart page */
+    .hidden { display:none; }
+    .back { font-size:20px; margin-bottom:6px; cursor:pointer; }
+    #chart { width:100%; height:260px; background:#fff; border-radius:12px; }
+  </style>
+</head>
+<body>
+<header>Fund Dashboard</header>
+
+<!-- LIST PAGE -->
+<div class="container" id="listPage">
+  <div class="filters">
+    <select id="trusteeFilter">
+      <option value="">All Trustees</option>
+      <option value="AIA">AIA</option>
+      <option value="HSBC">HSBC</option>
+    </select>
+    <select id="riskFilter">
+      <option value="">All Risk</option>
+      <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+      <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+    </select>
+    <input type="number" id="minReturn" placeholder="1Y % Min" />
+    <input type="number" id="maxReturn" placeholder="1Y % Max" />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Fund Name</th>
+        <th>3M</th>
+        <th>1Y</th>
+        <th>Fee</th>
+        <th>Risk</th>
+      </tr>
+    </thead>
+    <tbody id="fundBody"></tbody>
+  </table>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- CHART PAGE -->
+<div class="container hidden" id="chartPage">
+  <div class="back" onclick="goBack()">&lt;</div>
+  <div id="chart"></div>
+</div>
+
+<div class="fixed-bar">
+  <button onclick="goCompare()">Compare Selected Funds</button>
+</div>
+
+<script>
+/* ---------- mock backend data ---------- */
+const allFunds = [];
+const trustees = ['AIA','HSBC'];
+const schemas = ['Fund I','Fund II','Fund III'];
+let id = 1;
+
+trustees.forEach(t => {
+  schemas.forEach(s => {
+    const count = Math.floor(Math.random()*3)+2; // 2~4 funds per schema
+    for(let i=0;i<count;i++){
+      allFunds.push({
+        id: id++,
+        trustee: t,
+        schema: s,
+        group: `${t} - ${s}`,
+        name: `${t} Growth Fund ${id}`,
+        r3m: (Math.random()*5).toFixed(2)+'%',
+        r1y: (Math.random()*12).toFixed(2),
+        fee: (0.6+Math.random()).toFixed(2)+'%',
+        risk: Math.floor(Math.random()*7)+1
+      });
+    }
+  });
+});
+
+/* ---------- state ---------- */
+let page = 1;
+const pageSize = 20;
+const selected = new Set();
+
+/* ---------- filtering ---------- */
+function getFiltered(){
+  return allFunds.filter(f => {
+    if (trusteeFilter.value && f.trustee !== trusteeFilter.value) return false;
+    if (riskFilter.value && String(f.risk) !== riskFilter.value) return false;
+    if (minReturn.value && f.r1y < minReturn.value) return false;
+    if (maxReturn.value && f.r1y > maxReturn.value) return false;
+    return true;
+  });
+}
+
+/* ---------- render table ---------- */
+function renderTable(){
+  const data = getFiltered();
+  const tbody = document.getElementById('fundBody');
+  tbody.innerHTML = '';
+
+  const start = (page-1)*pageSize;
+  const pageData = data.slice(start, start+pageSize);
+
+  let currentGroup = '';
+  pageData.forEach(f => {
+    if (f.group !== currentGroup) {
+      currentGroup = f.group;
+      const gr = document.createElement('tr');
+      gr.className = 'group-row';
+      gr.innerHTML = `<td colspan="6">${currentGroup}</td>`;
+      tbody.appendChild(gr);
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" ${selected.has(f.id)?'checked':''}></td>
+      <td class="fund-name">${f.name}</td>
+      <td>${f.r3m}</td>
+      <td>${f.r1y}%</td>
+      <td>${f.fee}</td>
+      <td class="risk-${f.risk}">${f.risk}</td>
+    `;
+    tr.querySelector('input').onchange = e => {
+      e.target.checked ? selected.add(f.id) : selected.delete(f.id);
+    };
+    tbody.appendChild(tr);
+  });
+
+  renderPagination(data.length);
+}
+
+function renderPagination(total){
+  const pages = Math.ceil(total / pageSize);
+  const p = document.getElementById('pagination');
+  p.innerHTML = '';
+  for(let i=1;i<=pages;i++){
+    const b = document.createElement('button');
+    b.textContent = i;
+    if (i === page) b.style.background = '#ddd';
+    b.onclick = () => { page = i; renderTable(); };
+    p.appendChild(b);
+  }
+}
+
+trusteeFilter.onchange = riskFilter.onchange = minReturn.oninput = maxReturn.oninput = () => {
+  page = 1; renderTable();
+};
+
+renderTable();
+
+/* ---------- compare ---------- */
+function goCompare(){
+  if (selected.size === 0) return alert('Select at least one fund');
+  listPage.classList.add('hidden');
+  chartPage.classList.remove('hidden');
+  drawChart();
+}
+
+function goBack(){
+  chartPage.classList.add('hidden');
+  listPage.classList.remove('hidden');
+}
+
+function drawChart(){
+  const chart = echarts.init(document.getElementById('chart'));
+  const series = [...selected].map(id => {
+    const f = allFunds.find(x => x.id === id);
+    return {
+      name: f.name,
+      type: 'line',
+      data: Array.from({length:8}, (_,i)=>(Math.random()*f.r1y).toFixed(2))
+    };
+  });
+
+  chart.setOption({
+    tooltip:{ trigger:'axis' },
+    legend:{ top:10, left:'center' },
+    grid:{ left:40, right:20, top:50, bottom:30 },
+    xAxis:{ type:'category', data:['Dec','Jan','Feb','Mar','Apr','May','Jun','Jul'] },
+    yAxis:{ type:'value', axisLabel:{ formatter:'{value}%' } },
+    series
+  });
+}
+</script>
+</body>
+</html>
