@@ -1,0 +1,290 @@
+/* Tailwind CSS 基础样式 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS 变量定义 */
+@layer base {
+  :root {
+    /* 主色调 */
+    --color-primary: 59 130 246;
+    --color-primary-dark: 29 78 216;
+    
+    /* 背景色 */
+    --color-background: 255 255 255;
+    --color-surface: 249 250 251;
+    
+    /* 文字颜色 */
+    --color-text-primary: 23 23 23;
+    --color-text-secondary: 115 115 115;
+    --color-text-disabled: 163 163 163;
+    
+    /* 边框颜色 */
+    --color-border: 229 229 229;
+    --color-divider: 245 245 245;
+  }
+  
+  /* 暗黑模式 */
+  .dark {
+    --color-background: 23 23 23;
+    --color-surface: 38 38 38;
+    --color-text-primary: 250 250 250;
+    --color-text-secondary: 163 163 163;
+    --color-text-disabled: 115 115 115;
+    --color-border: 64 64 64;
+    --color-divider: 38 38 38;
+  }
+
+  html {
+    @apply h-full;
+  }
+  
+  body {
+    @apply h-full bg-neutral-50 text-neutral-900 antialiased;
+    @apply dark:bg-neutral-900 dark:text-neutral-50;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
+  #root {
+    @apply h-full;
+  }
+}
+
+/* 自定义通用样式 */
+@layer components {
+  /* 滚动条样式 */
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-neutral-100 dark:bg-neutral-800;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 dark:bg-neutral-600 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-400 dark:bg-neutral-500;
+  }
+  
+  /* 页面容器 */
+  .page-container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-content;
+  }
+  
+  /* 卡片容器 */
+  .card-container {
+    @apply bg-white dark:bg-neutral-800 rounded-lg shadow-card border border-neutral-200 dark:border-neutral-700 p-6;
+  }
+  
+  /* 表单标签 */
+  .form-label {
+    @apply block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2;
+  }
+  
+  /* 表单错误提示 */
+  .form-error {
+    @apply text-sm text-danger-600 dark:text-danger-400 mt-1;
+  }
+  
+  /* 必填标记 */
+  .required-mark {
+    @apply text-danger-500 ml-1;
+  }
+  
+  /* 禁用状态 */
+  .disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  /* 加载状态 */
+  .loading {
+    @apply animate-pulse;
+  }
+  
+  /* 页面标题 */
+  .page-title {
+    @apply text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-6;
+  }
+  
+  /* 区块标题 */
+  .section-title {
+    @apply text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4;
+  }
+
+  /* 表单相关样式 */
+  .form-label {
+    @apply block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1;
+  }
+
+  .required-mark {
+    @apply text-danger-500 ml-1;
+  }
+
+  .form-error {
+    @apply text-sm text-danger-600 dark:text-danger-400 mt-1;
+  }
+
+  /* 按钮样式补充 */
+  .btn-danger {
+    @apply px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  /* 数据为空提示 */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-neutral-500 dark:text-neutral-400;
+  }
+  
+  /* 徽章样式 */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-primary {
+    @apply bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200;
+  }
+  
+  .badge-success {
+    @apply bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200;
+  }
+  
+  .badge-warning {
+    @apply bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-200;
+  }
+  
+  .badge-danger {
+    @apply bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-200;
+  }
+  
+  .badge-neutral {
+    @apply bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200;
+  }
+  
+  /* 表格样式 */
+  .table-container {
+    @apply overflow-x-auto custom-scrollbar;
+  }
+  
+  .table {
+    @apply min-w-full divide-y divide-neutral-200 dark:divide-neutral-700;
+  }
+  
+  .table thead {
+    @apply bg-neutral-50 dark:bg-neutral-800;
+  }
+  
+  .table th {
+    @apply px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider;
+  }
+  
+  .table tbody {
+    @apply bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-700;
+  }
+  
+  .table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100;
+  }
+ 
+  
+  /* 分页样式 */
+  .pagination {
+    @apply flex items-center justify-between px-4 py-3 sm:px-6;
+  }
+  
+  .pagination-button {
+    @apply relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md;
+    @apply text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800;
+    @apply border border-neutral-300 dark:border-neutral-600;
+    @apply hover:bg-neutral-50 dark:hover:bg-neutral-700;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .pagination-button.active {
+    @apply bg-primary-600 text-white border-primary-600;
+    @apply hover:bg-primary-700;
+  }
+}
+
+/* 工具类 */
+@layer utilities {
+  /* 文本省略 */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* 渐变背景 */
+  .gradient-primary {
+    background: linear-gradient(135deg, rgb(59 130 246) 0%, rgb(147 197 253) 100%);
+  }
+  
+  .gradient-secondary {
+    background: linear-gradient(135deg, rgb(168 85 247) 0%, rgb(216 180 254) 100%);
+  }
+  
+  /* 毛玻璃效果 */
+  .glass-effect {
+    @apply bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg;
+  }
+  
+  /* 隐藏滚动条但保持滚动功能 */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break-before {
+    page-break-before: always;
+  }
+  
+  .print-break-after {
+    page-break-after: always;
+  }
+  
+  body {
+    @apply bg-white text-black;
+  }
+}
+
+/* 动画效果 */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f0f0f0 4%, #e0e0e0 25%, #f0f0f0 36%);
+  background-size: 1000px 100%;
+}
+
+.dark .shimmer {
+  background: linear-gradient(to right, #2a2a2a 4%, #3a3a3a 25%, #2a2a2a 36%);
+  background-size: 1000px 100%;
+}
