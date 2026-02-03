@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .ui-card { @apply rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-800/70 dark:bg-slate-900; }
+  .ui-input { @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-300 dark:border-slate-800 dark:bg-slate-950; }
+  .ui-label { @apply text-xs font-medium text-slate-500 dark:text-slate-300; }
+  .ui-btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60; }
+  .ui-btn-primary { @apply ui-btn bg-brand-600 text-white hover:bg-brand-700; }
+  .ui-btn-ghost { @apply ui-btn border border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900; }
+  .ui-btn-danger { @apply ui-btn bg-danger-500 text-white hover:bg-danger-700; }
+  .ui-badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium; }
+  .ui-badge-success { @apply ui-badge bg-success-50 text-success-700 dark:bg-success-700/20 dark:text-success-50; }
+  .ui-badge-danger { @apply ui-badge bg-danger-50 text-danger-700 dark:bg-danger-700/20 dark:text-danger-50; }
+  .ui-badge-warning { @apply ui-badge bg-warning-50 text-warning-700 dark:bg-warning-700/20 dark:text-warning-50; }
+}
+
+html, body { height: 100%; }
+* { scrollbar-width: thin; }
