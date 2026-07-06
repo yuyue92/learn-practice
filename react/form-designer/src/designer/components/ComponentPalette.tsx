@@ -66,6 +66,21 @@ export function ComponentPalette() {
         dispatch({ type: "ADD_FIELD", rowId, colId, field: f });
     }
 
+    // 往「当前选中所在的行」追加一列；row/col/field 三种选中态都能反推出 rowId
+    function addCol() {
+        const selected = state.selected;
+        const rowId =
+            selected.kind === "row" || selected.kind === "col" || selected.kind === "field"
+                ? selected.rowId
+                : undefined;
+
+        if (!rowId) {
+            alert("请先在画布中选中一个 Row（或该 Row 下的列/字段），再添加列");
+            return;
+        }
+        dispatch({ type: "ADD_COL", rowId });
+    }
+
     return (
         <div className="h-full min-h-0 overflow-y-auto border-r border-slate-200 bg-white p-3">
             <div className="text-sm font-semibold text-slate-900 mb-3">组件库</div>
@@ -77,9 +92,12 @@ export function ComponentPalette() {
                         disabled={!perms.canLayout}
                         className={`w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 active:scale-[0.99] ${!perms.canLayout ? "opacity-50 cursor-not-allowed" : ""}`}
                         onClick={() => perms.canLayout && dispatch({ type: "ADD_ROW", row: createDefaultRow() })}
-                    >
-                        + 行容器（Row）
-                    </button>
+                    >+ 行容器（Row）</button>
+                    <button
+                        disabled={!perms.canLayout}
+                        className={`mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 active:scale-[0.99] ${!perms.canLayout ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={() => perms.canLayout && addCol()}
+                    >+ 列（Col）</button>
                     <div className="mt-2 text-xs text-slate-500">提示：行内包含多列（Col），字段可拖入任意列</div>
                 </div>
 

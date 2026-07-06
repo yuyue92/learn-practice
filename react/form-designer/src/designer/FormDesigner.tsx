@@ -9,10 +9,10 @@ export function FormDesigner() {
     const { state } = useDesigner();
 
     return (
-        <div className="h-[100dvh] w-screen overflow-hidden bg-white flex flex-col">
+        <div className="flex h-full w-full flex-col overflow-hidden bg-white">
             <TopBar />
 
-            <div className="grid h-[calc(100vh-56px)] grid-cols-12">
+            <div className="grid min-h-0 flex-1 grid-cols-12">
                 <div className="col-span-3 min-h-0 min-w-[260px] overflow-hidden">
                     <ComponentPalette />
                 </div>
