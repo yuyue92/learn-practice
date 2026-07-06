@@ -97,3 +97,70 @@
                          </Tooltip>)
                      }
                  </Grid>
+
+====================
+
+
+
+
+
+
+
+--- a/pages/EDA/EdaCollection.tsx
++++ b/pages/EDA/EdaCollection.tsx
+@@ -183,6 +183,22 @@ export default function EdaCollection() {
+     const visibleFields = useMemo(
+         () => filterFieldList.filter(v => !hideFields.includes(v.label)),
+         [filterFieldList, hideFields]
+     )
++    // 归一化比较，避免 string/number/null 类型不一致导致误判为"已修改"
++    const normalizeFieldValue = (v: any) => {
++        if (v === null || v === undefined) return '';
++        if (typeof v === 'string') return v.trim();
++        return v;
++    };
++    // 计算哪些字段的当前值(ddeMemInfo)与编辑前基准值(ddeMemInfoOld)不同
++    const changedFieldKeys = useMemo(() => {
++        const changed = new Set<string>();
++        if (!ddeMemInfo || !ddeMemInfoOld) return changed;
++        visibleFields.forEach(f => {
++            const oldVal = normalizeFieldValue(ddeMemInfoOld[f.key]);
++            const newVal = normalizeFieldValue(ddeMemInfo[f.key]);
++            if (oldVal !== newVal) changed.add(f.key);
++        });
++        return changed;
++    }, [ddeMemInfo, ddeMemInfoOld, visibleFields]);
+     //过滤掉禁用的字段
+     const enabledFields = useMemo(
+@@ -376,6 +392,7 @@ export default function EdaCollection() {
+     const handleSaveOrSubmitSuccessResponse = (res: any, msg: string, currentMemInfo: DdeMemInfo | null) => {
+         if (!currentMemInfo) return;
+         setRawResponseData(prev => {
+             if (!prev) return prev;
+             const extra = res && (typeof res === 'object') && ('errCount' in res) ? { errCount: res.errCount as number } : {}
+             return {
+                 ...prev,
+                 ddeMemInfos: prev.ddeMemInfos.map(item =>
+                     item.id === currentMemInfo.id ? { ...item, ...currentMemInfo, ...extra } : item
+                 )
+             }
+         });
++        setddeMemInfoOld(currentMemInfo); // 保存/提交成功后重置基准值，清除已修改高亮
+         message.success({ content: msg });
+     }
+@@ -594,13 +611,14 @@ export default function EdaCollection() {
+                                     {visibleFields.map((fieldConfig) => {
+                                         const disabled = !isEdit || !!fieldConfig.disabled
+                                         return (
+                                             <FieldRenderer
+                                                 key={fieldConfig.key}
+                                                 field={fieldConfig}
+                                                 ddeMemInfo={safeMemInfo}
+                                                 setDdeMemInfo={setDdeMemInfo}
+                                                 editFlag={isEdit}
+                                                 onEnter={handleFieldEnter}
+                                                 registerRef={(fieldKey, el) => registerInputRef(fieldKey, el, disabled)}
++                                                changed={changedFieldKeys.has(fieldConfig.key)}
+                                             />
+                                         )
+                                     })}
