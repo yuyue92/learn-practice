@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快捷复制组件 · 场景演示</title>
+<style>
+  :root{
+    --ink: #1b1d22;
+    --ink-soft: #5c6068;
+    --paper: #f6f5f2;
+    --panel: #ffffff;
+    --line: #e3e1db;
+    --accent: #2f6f5e;
+    --accent-soft: #e6efec;
+    --code-bg: #1b1d22;
+    --code-ink: #e6e6e2;
+    --radius: 10px;
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 48px 20px 96px;
+  }
+
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  header.page-head{
+    margin-bottom: 40px;
+  }
+
+  header.page-head h1{
+    font-size: 26px;
+    font-weight: 650;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+
+  header.page-head p{
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 14.5px;
+    max-width: 62ch;
+  }
+
+  section.demo{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 24px 24px;
+    margin-bottom: 22px;
+  }
+
+  section.demo h2{
+    font-size: 15px;
+    font-weight: 650;
+    margin: 0 0 4px;
+  }
+
+  section.demo .desc{
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin: 0 0 16px;
+  }
+
+  /* ---------- 复制按钮通用样式 ---------- */
+  .copy-btn{
+    --size: 28px;
+    width: var(--size);
+    height: var(--size);
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .copy-btn:hover{ background: #eeece6; color: var(--ink); }
+  .copy-btn:active{ transform: scale(0.92); }
+  .copy-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .copy-btn svg{ width: 15px; height: 15px; }
+
+  /* 两个层叠矩形图标 */
+  .icon-copy .r-back{ transition: opacity 0.15s ease; }
+  .icon-check{ display: none; }
+  .copy-btn.copied .icon-copy{ display: none; }
+  .copy-btn.copied .icon-check{ display: inline-flex; }
+  .copy-btn.copied{ color: var(--accent); }
+
+  /* ---------- 场景1：代码块（按钮固定右上角）---------- */
+  .code-block{
+    position: relative;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: var(--radius);
+    padding: 16px 44px 16px 16px;
+    font-family: "SFMono-Regular", Consolas, "Courier New", monospace;
+    font-size: 13px;
+    overflow-x: auto;
+  }
+  .code-block pre{ margin: 0; white-space: pre; }
+  .code-block .copy-btn{
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: #b8b8b2;
+  }
+  .code-block .copy-btn:hover{ background: rgba(255,255,255,0.12); color: #fff; }
+
+  /* ---------- 场景2：AI 对话气泡（悬浮出现在下方）---------- */
+  .chat-msg{
+    max-width: 88%;
+    background: var(--accent-soft);
+    border-radius: 14px 14px 14px 4px;
+    padding: 12px 14px;
+    position: relative;
+  }
+  .chat-msg .msg-text{ margin: 0 0 4px; }
+  .chat-msg .msg-toolbar{
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .chat-msg:hover .msg-toolbar,
+  .chat-msg:focus-within .msg-toolbar{
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ---------- 场景3：表格（悬浮行显示复制按钮）---------- */
+  table.data-table{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  table.data-table th{
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-size: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  table.data-table td{
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  table.data-table tr:last-child td{ border-bottom: none; }
+  table.data-table .cell-flex{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  table.data-table tr .copy-btn{
+    opacity: 0;
+    --size: 24px;
+  }
+  table.data-table tr:hover .copy-btn,
+  table.data-table tr .copy-btn:focus-visible{
+    opacity: 1;
+  }
+
+  /* ---------- 场景4：列表（每项右侧出现）---------- */
+  ul.item-list{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul.item-list li{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px dashed var(--line);
+  }
+  ul.item-list li:last-child{ border-bottom: none; }
+  ul.item-list li .copy-btn{ opacity: 0; }
+  ul.item-list li:hover .copy-btn,
+  ul.item-list li .copy-btn:focus-visible{ opacity: 1; }
+  ul.item-list .item-main{ font-size: 14px; }
+  ul.item-list .item-sub{ font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- 场景5：文本输入框 / textarea（右上角按钮）---------- */
+  .field{
+    position: relative;
+  }
+  .field label{
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field textarea{
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 40px 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    background: #fdfdfc;
+    resize: vertical;
+  }
+  .field textarea{ min-height: 78px; padding-top: 12px; }
+  .field input:focus,
+  .field textarea:focus{
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field .copy-btn{
+    position: absolute;
+    right: 6px;
+    top: 30px;
+  }
+
+  /* ---------- 场景6：长文本段落（悬浮块角标）---------- */
+  .para-block{
+    position: relative;
+    padding: 14px 40px 14px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fdfdfc;
+  }
+  .para-block p{ margin: 0; font-size: 14px; }
+  .para-block .copy-btn{
+    position: absolute;
+    top: 10px;
+    right: 8px;
+    opacity: 0;
+  }
+  .para-block:hover .copy-btn,
+  .para-block .copy-btn:focus-visible{ opacity: 1; }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 999;
+  }
+  .toast.show{
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="page-head">
+    <h1>快捷复制组件演示</h1>
+    <p>统一样式的「层叠矩形」复制图标，覆盖代码块、对话气泡、表格、列表、输入框、正文段落六种常见场景。点击图标即可复制对应内容，成功后图标会短暂变为对勾。</p>
+  </header>
+
+  <!-- 场景1：代码块 -->
+  <section class="demo">
+    <h2>代码块</h2>
+    <p class="desc">按钮固定在右上角，常见于 AI 回答中的代码区域。</p>
+    <div class="code-block">
+      <button class="copy-btn" data-copy-target="#code-1" aria-label="复制代码">
+        <span class="icon-copy" style="display:inline-flex"></span>
+        <span class="icon-check" style="display:none"></span>
+      </button>
+      <pre id="code-1">function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("World"));</pre>
+    </div>
+  </section>
+
+  <!-- 场景2：AI 对话气泡 -->
+  <section class="demo">
+    <h2>对话气泡</h2>
+    <p class="desc">鼠标悬浮（或聚焦）在消息上时，底部工具栏淡入显示。</p>
+    <div class="chat-msg" tabindex="0">
+      <p class="msg-text" id="chat-1">当然可以。快捷复制的关键在于：图标要低调，只在需要时出现；点击后要给出明确的成功反馈，比如切换成对勾图标或弹出提示条。</p>
+      <div class="msg-toolbar">
+        <button class="copy-btn" data-copy-target="#chat-1" aria-label="复制回答">
+          <span class="icon-copy" style="display:inline-flex"></span>
+          <span class="icon-check" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 场景3：表格 -->
+  <section class="demo">
+    <h2>表格内容</h2>
+    <p class="desc">悬浮某一行时，该行才出现复制按钮，避免表格视觉噪音。</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>字段</th><th>值</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>API Key</td>
+          <td>
+            <div class="cell-flex">
+              <span id="cell-1">sk-live-4f9a7c2e91xxxx</span>
+              <button class="copy-btn" data-copy-target="#cell-1" aria-label="复制 API Key">
+                <span class="icon-copy" style="display:inline-flex"></span>
+                <span class="icon-check" style="display:none"></span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>Endpoint</td>
+          <td>
+            <div class="cell-flex">
+              <span id="cell-2">https://api.example.com/v1/messages</span>
+              <button class="copy-btn" data-copy-target="#cell-2" aria-label="复制 Endpoint">
+                <span class="icon-copy" style="display:inline-flex"></span>
+                <span class="icon-check" style="display:none"></span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>订单号</td>
+          <td>
+            <div class="cell-flex">
+              <span id="cell-3">ORD-2026-0903-1187</span>
+              <button class="copy-btn" data-copy-target="#cell-3" aria-label="复制订单号">
+                <span class="icon-copy" style="display:inline-flex"></span>
+                <span class="icon-check" style="display:none"></span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 场景4：列表 -->
+  <section class="demo">
+    <h2>列表内容</h2>
+    <p class="desc">每一项独立可复制，适合命令清单、联系方式等场景。</p>
+    <ul class="item-list">
+      <li>
+        <div>
+          <div class="item-main" id="list-1">npm install claude-sdk</div>
+          <div class="item-sub">安装命令</div>
+        </div>
+        <button class="copy-btn" data-copy-target="#list-1" aria-label="复制命令">
+          <span class="icon-copy" style="display:inline-flex"></span>
+          <span class="icon-check" style="display:none"></span>
+        </button>
+      </li>
+      <li>
+        <div>
+          <div class="item-main" id="list-2">support@example.com</div>
+          <div class="item-sub">客服邮箱</div>
+        </div>
+        <button class="copy-btn" data-copy-target="#list-2" aria-label="复制邮箱">
+          <span class="icon-copy" style="display:inline-flex"></span>
+          <span class="icon-check" style="display:none"></span>
+        </button>
+      </li>
+      <li>
+        <div>
+          <div class="item-main" id="list-3">git clone https://github.com/user/repo.git</div>
+          <div class="item-sub">克隆仓库</div>
+        </div>
+        <button class="copy-btn" data-copy-target="#list-3" aria-label="复制 git 命令">
+          <span class="icon-copy" style="display:inline-flex"></span>
+          <span class="icon-check" style="display:none"></span>
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 场景5：输入框 -->
+  <section class="demo">
+    <h2>文本输入框</h2>
+    <p class="desc">按钮固定在控件右侧，复制的是当前输入框内的实时值，而非初始值。</p>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="field">
+        <label for="input-1">分享链接</label>
+        <input id="input-1" type="text" value="https://example.com/share/9f8e7d">
+        <button class="copy-btn" data-copy-input="#input-1" aria-label="复制链接">
+          <span class="icon-copy" style="display:inline-flex"></span>
+          <span class="icon-check" style="display:none"></span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="textarea-1">生成的提示词</label>
+        <textarea id="textarea-1">你是一位资深前端设计师，请以简洁、克制的风格重新设计以下界面……</textarea>
+        <button class="copy-btn" data-copy-input="#textarea-1" aria-label="复制提示词">
+          <span class="icon-copy" style="display:inline-flex"></span>
+          <span class="icon-check" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 场景6：正文段落 -->
+  <section class="demo">
+    <h2>正文段落</h2>
+    <p class="desc">悬浮整段文字时，右上角出现复制按钮，一次性复制整段内容。</p>
+    <div class="para-block" tabindex="0">
+      <button class="copy-btn" data-copy-target="#para-1" aria-label="复制段落">
+        <span class="icon-copy" style="display:inline-flex"></span>
+        <span class="icon-check" style="display:none"></span>
+      </button>
+      <p id="para-1">这是一段较长的正文内容，用来演示段落级别的复制功能。无论内容有多长，点击一次即可复制这一整段纯文本，方便粘贴到其他地方，而不需要手动拖拽选中。</p>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast">已复制到剪贴板</div>
+
+<template id="icon-copy-svg">
+  <svg class="r-back" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3.2" y="3.2" width="10.6" height="10.6" rx="2" stroke="currentColor" stroke-width="1.4" opacity="0.55"/>
+    <rect x="6.2" y="6.2" width="10.6" height="10.6" rx="2" fill="var(--panel)" stroke="currentColor" stroke-width="1.4"/>
+  </svg>
+</template>
+
+<template id="icon-check-svg">
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4.5 10.5L8.2 14L15.5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</template>
+
+<script>
+(function(){
+  // 把所有 .icon-copy / .icon-check 占位符替换成实际 SVG
+  var copySVG = document.getElementById('icon-copy-svg').innerHTML.trim();
+  var checkSVG = document.getElementById('icon-check-svg').innerHTML.trim();
+  document.querySelectorAll('.icon-copy').forEach(function(el){ el.innerHTML = copySVG; el.classList.add('icon-copy-inner'); });
+  document.querySelectorAll('.icon-check').forEach(function(el){ el.innerHTML = checkSVG; el.classList.add('icon-check-inner'); });
+
+  // 统一给每个按钮补上正确的 class 结构，便于 CSS 的 .copied 切换显示
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    var copyWrap = btn.querySelector('span:first-child');
+    var checkWrap = btn.querySelector('span:last-child');
+    copyWrap.classList.add('icon-copy');
+    checkWrap.classList.add('icon-check');
+  });
+
+  var toast = document.getElementById('toast');
+  var toastTimer = null;
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1600);
+  }
+
+  function flashCopied(btn){
+    btn.classList.add('copied');
+    setTimeout(function(){ btn.classList.remove('copied'); }, 1400);
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(e){
+      // 兼容不支持 clipboard API 的环境
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try{ ok = document.execCommand('copy'); }catch(err){}
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.preventDefault();
+      e.stopPropagation();
+
+      var text = '';
+      var targetSel = btn.getAttribute('data-copy-target');
+      var inputSel = btn.getAttribute('data-copy-input');
+
+      if (targetSel){
+        var el = document.querySelector(targetSel);
+        text = el ? el.textContent.trim() : '';
+      } else if (inputSel){
+        var input = document.querySelector(inputSel);
+        text = input ? input.value : '';
+      }
+
+      if (!text) return;
+
+      var ok = await copyText(text);
+      if (ok){
+        flashCopied(btn);
+        showToast('已复制到剪贴板');
+      } else {
+        showToast('复制失败，请手动选择文本');
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
