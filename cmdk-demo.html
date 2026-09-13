@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>指挥面板 · Command Palette 交互演示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-app:#0b0d12;
+    --bg-panel:#15181f;
+    --bg-elevated:#1c202a;
+    --bg-hover:#232838;
+    --border:#262b38;
+    --border-soft:#1e222c;
+    --text-primary:#e8eaf0;
+    --text-secondary:#8b93a7;
+    --text-faint:#565d6f;
+    --accent:#ffb020;
+    --accent-dim:#4a3a1a;
+    --teal:#5eead4;
+    --danger:#f4506b;
+    --radius:14px;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:var(--sans);
+    background:var(--bg-app);
+    color:var(--text-primary);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Fake dashboard backdrop ---------- */
+  .backdrop{
+    position:fixed; inset:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #1a2030 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 10%, #1a1420 0%, transparent 55%),
+      var(--bg-app);
+    z-index:0;
+  }
+  .fake-topbar{
+    position:absolute; top:0; left:0; right:0; height:56px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex; align-items:center; padding:0 24px; gap:16px;
+  }
+  .fake-logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#7a5220);}
+  .fake-crumb{color:var(--text-faint);font-size:13px;}
+  .fake-sidebar{
+    position:absolute; top:56px; bottom:0; left:0; width:220px;
+    border-right:1px solid var(--border-soft); padding:20px 14px;
+  }
+  .fake-nav-item{
+    padding:9px 12px; border-radius:8px; font-size:13.5px; color:var(--text-secondary);
+    margin-bottom:4px; display:flex; align-items:center; gap:10px;
+  }
+  .fake-nav-item.active{background:var(--bg-elevated);color:var(--text-primary);}
+  .fake-dot{width:6px;height:6px;border-radius:50%;background:var(--text-faint);}
+  .fake-main{
+    position:absolute; top:56px; left:220px; right:0; bottom:0; padding:32px;
+  }
+  .fake-card{
+    background:var(--bg-panel); border:1px solid var(--border-soft); border-radius:12px;
+    height:120px; margin-bottom:16px; opacity:.6;
+  }
+  .fake-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  .fake-grid .fake-card{height:90px;}
+
+  /* ---------- Launcher hint ---------- */
+  .launcher{
+    position:relative; z-index:5;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px; gap:18px; text-align:center;
+  }
+  .launcher h1{
+    font-size:15px; font-weight:600; color:var(--text-secondary);
+    letter-spacing:.2px; margin:0;
+  }
+  .kbd-row{display:flex; gap:8px; align-items:center;}
+  kbd{
+    font-family:var(--mono); font-size:13px; background:var(--bg-elevated);
+    border:1px solid var(--border); border-bottom-width:2px; border-radius:7px;
+    padding:6px 10px; color:var(--text-primary); box-shadow:0 1px 0 rgba(0,0,0,.3);
+  }
+  .open-btn{
+    font-family:var(--sans); font-size:14px; font-weight:500;
+    background:var(--bg-panel); color:var(--text-primary);
+    border:1px solid var(--border); border-radius:10px;
+    padding:10px 16px; cursor:pointer; display:flex; align-items:center; gap:10px;
+    transition:border-color .15s, background .15s;
+  }
+  .open-btn:hover{border-color:#3a4157; background:var(--bg-elevated);}
+  .open-btn svg{opacity:.7;}
+
+  .role-switch{
+    display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--text-faint);
+  }
+  .role-switch button{
+    font-family:var(--sans); font-size:12.5px; padding:6px 12px; border-radius:20px;
+    border:1px solid var(--border); background:var(--bg-panel); color:var(--text-secondary);
+    cursor:pointer; transition:.15s;
+  }
+  .role-switch button.active{background:var(--accent-dim); color:var(--accent); border-color:#5a4322;}
+
+  .score-toggle{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-faint);}
+  .score-toggle input{accent-color:var(--accent);}
+
+  /* ---------- Overlay ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(6,7,10,.6); backdrop-filter:blur(3px);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding-top:min(12vh, 110px);
+    opacity:0; pointer-events:none; transition:opacity .14s ease;
+  }
+  .overlay.show{opacity:1; pointer-events:all;}
+
+  .palette{
+    width:min(640px, 92vw);
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:0 24px 60px -12px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02);
+    transform:translateY(-8px) scale(.985);
+    transition:transform .16s cubic-bezier(.2,.8,.3,1);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    max-height:min(560px, 76vh);
+  }
+  .overlay.show .palette{transform:translateY(0) scale(1);}
+
+  .search-row{
+    display:flex; align-items:center; gap:10px;
+    padding:14px 16px; border-bottom:1px solid var(--border-soft);
+    flex-shrink:0;
+  }
+  .search-row svg{flex-shrink:0; color:var(--text-faint);}
+  .search-row input{
+    flex:1; background:none; border:none; outline:none;
+    font-family:var(--sans); font-size:16px; color:var(--text-primary);
+  }
+  .search-row input::placeholder{color:var(--text-faint);}
+  .esc-pill{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border:1px solid var(--border); border-radius:6px; padding:3px 7px;
+    flex-shrink:0;
+  }
+
+  .chips{
+    display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--border-soft);
+    flex-shrink:0; overflow-x:auto;
+  }
+  .chip{
+    font-family:var(--sans); font-size:12.5px; padding:5px 11px; border-radius:20px;
+    border:1px solid var(--border); background:transparent; color:var(--text-secondary);
+    cursor:pointer; white-space:nowrap; transition:.12s;
+  }
+  .chip.active{background:var(--bg-elevated); color:var(--text-primary); border-color:#3a4157;}
+  .chip .hint{font-family:var(--mono); font-size:10px; color:var(--text-faint); margin-left:5px;}
+
+  .cmd-mode-banner{
+    font-family:var(--mono); font-size:12px; color:var(--teal);
+    background:rgba(94,234,212,.07); border-bottom:1px solid var(--border-soft);
+    padding:7px 16px; flex-shrink:0;
+  }
+
+  .results{
+    overflow-y:auto; padding:6px 0 10px;
+    flex:1;
+  }
+  .results::-webkit-scrollbar{width:8px;}
+  .results::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+
+  .group-label{
+    font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:.4px;
+    color:var(--text-faint); text-transform:uppercase;
+    padding:12px 16px 6px;
+  }
+
+  .item{
+    display:flex; align-items:center; gap:12px;
+    padding:9px 16px; margin:0 6px; border-radius:9px;
+    cursor:pointer; position:relative;
+  }
+  .item.selected{background:var(--bg-elevated);}
+  .item.selected .item-icon{background:var(--accent-dim); color:var(--accent);}
+  .item.locked{opacity:.5;}
+  .item-icon{
+    width:30px; height:30px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-app); border:1px solid var(--border-soft);
+    font-size:15px;
+  }
+  .item-body{flex:1; min-width:0;}
+  .item-title{font-size:14px; font-weight:500; display:flex; align-items:center; gap:6px;}
+  .item-sub{font-size:12px; color:var(--text-secondary); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .item-title mark{background:none; color:var(--accent); font-weight:700;}
+  .item-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .item-score{font-family:var(--mono); font-size:11px; color:var(--text-faint); background:var(--bg-app); border:1px solid var(--border-soft); border-radius:5px; padding:2px 6px;}
+  .lock-badge{font-size:11px; color:var(--danger); display:flex; align-items:center; gap:3px;}
+  .kbd-hint{font-family:var(--mono); font-size:11px; color:var(--text-faint); border:1px solid var(--border-soft); border-radius:5px; padding:2px 6px; opacity:0; }
+  .item.selected .kbd-hint{opacity:1;}
+
+  .empty-state{
+    padding:48px 20px; text-align:center; color:var(--text-faint); font-size:13.5px;
+  }
+  .empty-state .big{font-size:26px; margin-bottom:10px;}
+
+  .footer-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 16px; border-top:1px solid var(--border-soft);
+    font-size:11.5px; color:var(--text-faint); flex-shrink:0;
+    background:var(--bg-app);
+  }
+  .footer-bar .fk{display:flex; gap:14px;}
+  .footer-bar .fk span{display:flex; align-items:center; gap:5px;}
+  .footer-bar kbd{padding:2px 6px; font-size:10px; border-bottom-width:1px;}
+
+  /* toast */
+  .toast{
+    position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--bg-elevated); border:1px solid var(--border); color:var(--text-primary);
+    padding:11px 18px; border-radius:10px; font-size:13.5px; z-index:100;
+    opacity:0; transition:.2s; display:flex; align-items:center; gap:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .toast .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);}
+
+  @media (prefers-reduced-motion: reduce){
+    .overlay, .palette, .toast{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="backdrop">
+  <div class="fake-topbar">
+    <div class="fake-logo"></div>
+    <div class="fake-crumb">控制台 / 概览</div>
+  </div>
+  <div class="fake-sidebar">
+    <div class="fake-nav-item active"><span class="fake-dot"></span>仪表盘</div>
+    <div class="fake-nav-item"><span class="fake-dot"></span>员工管理</div>
+    <div class="fake-nav-item"><span class="fake-dot"></span>考勤</div>
+    <div class="fake-nav-item"><span class="fake-dot"></span>审批</div>
+    <div class="fake-nav-item"><span class="fake-dot"></span>报表</div>
+    <div class="fake-nav-item"><span class="fake-dot"></span>设置</div>
+  </div>
+  <div class="fake-main">
+    <div class="fake-card"></div>
+    <div class="fake-grid">
+      <div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div>
+    </div>
+  </div>
+</div>
+
+<div class="launcher">
+  <h1>点击按钮或按下快捷键，呼出全局指挥面板</h1>
+  <button class="open-btn" id="openBtn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>搜索页面、数据或命令…</span>
+  </button>
+  <div class="kbd-row">
+    <kbd id="kbdMac">⌘ K</kbd><span style="color:var(--text-faint);font-size:12px;">或</span><kbd>Ctrl K</kbd>
+  </div>
+
+  <div class="role-switch">
+    当前角色：
+    <button class="active" data-role="admin">管理员</button>
+    <button data-role="staff">普通员工</button>
+    <span style="margin-left:6px;">— 切换后观察"薪资明细"是否可见（服务端权限过滤演示）</span>
+  </div>
+
+  <label class="score-toggle">
+    <input type="checkbox" id="scoreToggle"> 显示模糊匹配分数（调试视图）
+  </label>
+
+  <div style="max-width:520px;font-size:12.5px;color:var(--text-faint);line-height:1.7;margin-top:6px;">
+    提示：试试输入 <span style="font-family:var(--mono);color:var(--teal);">kq</span>（考勤拼音首字母）、
+    <span style="font-family:var(--mono);color:var(--teal);">XCS</span>（员工工号）、
+    或输入 <span style="font-family:var(--mono);color:var(--teal);">&gt;</span> 进入纯命令模式（类似 VS Code 的 Ctrl+Shift+P）。
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="palette" id="palette">
+    <div class="search-row">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" type="text" placeholder="搜索组件、数据或输入 &gt; 执行命令…" autocomplete="off" spellcheck="false">
+      <span class="esc-pill">ESC</span>
+    </div>
+
+    <div class="chips" id="chips">
+      <button class="chip active" data-filter="all">全部 <span class="hint">1</span></button>
+      <button class="chip" data-filter="page">页面导航 <span class="hint">2</span></button>
+      <button class="chip" data-filter="data">数据 <span class="hint">3</span></button>
+      <button class="chip" data-filter="command">命令 <span class="hint">4</span></button>
+    </div>
+
+    <div class="cmd-mode-banner" id="cmdBanner" style="display:none;">⌘ 命令模式 — 仅显示可执行操作。删除 “&gt;” 返回常规搜索。</div>
+
+    <div class="results" id="results"></div>
+
+    <div class="footer-bar">
+      <div class="fk">
+        <span><kbd>↑↓</kbd>选择</span>
+        <span><kbd>Enter</kbd>执行</span>
+        <span><kbd>Tab</kbd>切换分类</span>
+        <span><kbd>&gt;</kbd>命令模式</span>
+      </div>
+      <div id="roleFooter" style="font-family:var(--mono);">role: admin</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastText"></span></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Data set. `keywords` includes english aliases + pinyin initials for fuzzy
+// matching, so typing "kq" or "attendance" both surface 考勤.
+// ---------------------------------------------------------------------------
+const DATA = [
+  // ---- Pages (site navigation) ----
+  { id:'p1', group:'page', icon:'📊', title:'仪表盘', sub:'Dashboard · 概览与关键指标', keywords:['dashboard','overview','gailan'] },
+  { id:'p2', group:'page', icon:'👥', title:'员工管理', sub:'Employees · 花名册与档案', keywords:['employee','staff','yg','yuangong'] },
+  { id:'p3', group:'page', icon:'🕐', title:'考勤', sub:'Attendance · 打卡与请假记录', keywords:['attendance','clockin','kq','kaoqin'] },
+  { id:'p4', group:'page', icon:'✅', title:'审批', sub:'Approvals · 待办审批流程', keywords:['approval','workflow','sp','shenpi'] },
+  { id:'p5', group:'page', icon:'📈', title:'报表', sub:'Reports · 周报 / 月报 / 年报', keywords:['report','weeklyreport','bb','baobiao'] },
+  { id:'p6', group:'page', icon:'⚙️', title:'设置', sub:'Settings · 系统与账户配置', keywords:['settings','preferences','sz','shezhi'] },
+
+  // ---- Data records (search results, not just navigation) ----
+  { id:'d1', group:'data', icon:'🧑', title:'XCS00011 — John Chen', sub:'员工档案 · 技术部 · 在职', keywords:['john','employee record','yuangong dangan'] },
+  { id:'d2', group:'data', icon:'🏢', title:'PCCW', sub:'部门 · 12 名成员', keywords:['department','bumen','bm'] },
+  { id:'d3', group:'data', icon:'📄', title:'2026 年第 3 周周报', sub:'报表 · 上传于 3 天前', keywords:['weekly report','zhoubao','zb'] },
+  { id:'d4', group:'data', icon:'📋', title:'审批单 #4521', sub:'John Chen 提交的加班申请 · 待审批', keywords:['overtime','shenpidan','jiaban'] },
+  { id:'d5', group:'data', icon:'🔒', title:'薪资明细 — 技术部', sub:'敏感数据 · 仅管理员可见', keywords:['salary','payroll','xinzi','xz'], locked:true },
+
+  // ---- Commands (actions, not results) ----
+  { id:'c1', group:'command', icon:'＋', title:'新建员工', sub:'Create employee', keywords:['create employee','new staff','xinjian','xj'], isCommand:true },
+  { id:'c2', group:'command', icon:'↓', title:'导出为 CSV', sub:'Export current view', keywords:['export csv','daochu','dc'], isCommand:true },
+  { id:'c3', group:'command', icon:'☾', title:'切换深色模式', sub:'Toggle dark mode', keywords:['dark mode','qiehuan','moshi','qh'], isCommand:true },
+  { id:'c4', group:'command', icon:'📝', title:'新建报表', sub:'Create report', keywords:['create report','xinjian baobiao'], isCommand:true },
+  { id:'c5', group:'command', icon:'⎋', title:'退出登录', sub:'Log out of this account', keywords:['logout','sign out','tuichu denglu','tcdl'], isCommand:true, danger:true },
+];
+
+const GROUP_LABELS = { page:'页面导航', data:'数据', command:'命令', recent:'最近使用' };
+
+let state = {
+  query: '',
+  activeFilter: 'all',
+  selectedIndex: 0,
+  role: 'admin',
+  showScores: false,
+  recentIds: ['p3','d1','c2'], // seeded recent history to demonstrate personalization
+};
+
+let flatResults = []; // current flattened, ordered list of rendered items (for keyboard nav)
+
+// ---------------------------------------------------------------------------
+// Fuzzy scoring — simplified command-score style algorithm.
+// Rewards: exact match > prefix match > word-boundary start > consecutive
+// character run > case match. Also checks each alias in `keywords` and takes
+// the best score across title/sub/keywords, so pinyin initials & english
+// aliases work as first-class matches (just weighted slightly lower).
+// ---------------------------------------------------------------------------
+function scoreString(str, query) {
+  if (!query) return 0;
+  const s = str.toLowerCase();
+  const q = query.toLowerCase();
+
+  if (s === q) return 1.0;
+  if (s.startsWith(q)) return 0.9;
+
+  // word-boundary prefix (start of any word/segment matches query)
+  const wordStarts = s.split(/[\s\-_/·]+/);
+  if (wordStarts.some(w => w.startsWith(q))) return 0.8;
+
+  // subsequence match with consecutive-run + start bonuses
+  let si = 0, qi = 0, consecutive = 0, bestConsecutive = 0, firstMatchIdx = -1;
+  while (si < s.length && qi < q.length) {
+    if (s[si] === q[qi]) {
+      if (firstMatchIdx === -1) firstMatchIdx = si;
+      consecutive++;
+      bestConsecutive = Math.max(bestConsecutive, consecutive);
+      qi++;
+    } else {
+      consecutive = 0;
+    }
+    si++;
+  }
+  if (qi < q.length) return 0; // not all query chars matched → no match
+
+  const completeness = q.length / s.length;
+  const runBonus = bestConsecutive / q.length;
+  const positionBonus = firstMatchIdx === 0 ? 0.15 : Math.max(0, 0.1 - firstMatchIdx * 0.01);
+  let sc = 0.35 + runBonus * 0.3 + completeness * 0.15 + positionBonus;
+  return Math.min(sc, 0.75);
+}
+
+function bestScore(item, query) {
+  if (!query) return { score: 0, field: null };
+  let best = { score: 0, field: null };
+  const title = scoreString(item.title, query);
+  if (title > best.score) best = { score: title, field: 'title' };
+  const sub = scoreString(item.sub, query) * 0.6;
+  if (sub > best.score) best = { score: sub, field: 'sub' };
+  for (const k of item.keywords) {
+    const ks = scoreString(k, query) * 0.85; // alias match, slightly discounted
+    if (ks > best.score) best = { score: ks, field: 'alias', alias: k };
+  }
+  return best;
+}
+
+function highlightMatch(str, query) {
+  if (!query) return escapeHtml(str);
+  const s = str, q = query.toLowerCase();
+  let out = '', si = 0, qi = 0;
+  while (si < s.length) {
+    if (qi < q.length && s[si].toLowerCase() === q[qi]) {
+      out += '<mark>' + escapeHtml(s[si]) + '</mark>';
+      qi++;
+    } else {
+      out += escapeHtml(s[si]);
+    }
+    si++;
+  }
+  return out;
+}
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function isVisibleForRole(item) {
+  if (item.locked && state.role !== 'admin') return false;
+  return true;
+}
+
+function computeResults() {
+  const q = state.query.trim();
+  const commandMode = q.startsWith('>');
+  const effectiveQuery = commandMode ? q.slice(1).trim() : q;
+  document.getElementById('cmdBanner').style.display = commandMode ? 'block' : 'none';
+
+  let pool = DATA.filter(isVisibleForRole);
+  if (commandMode) pool = pool.filter(i => i.group === 'command');
+  else if (state.activeFilter !== 'all') pool = pool.filter(i => i.group === state.activeFilter);
+
+  if (!effectiveQuery) {
+    // Empty query: show "recent" group (personalization) then the rest grouped normally.
+    const recentItems = state.recentIds
+      .map(id => pool.find(i => i.id === id))
+      .filter(Boolean)
+      .map(i => ({ item: i, score: 1, group: 'recent' }));
+
+    const rest = pool
+      .filter(i => !(state.activeFilter === 'all' && !commandMode && state.recentIds.includes(i.id)))
+      .map(i => ({ item: i, score: 0, group: i.group }));
+
+    return { groups: groupBy([...recentItems, ...rest]), commandMode };
+  }
+
+  const scored = pool
+    .map(item => {
+      const { score, field, alias } = bestScore(item, effectiveQuery);
+      return { item, score, field, alias, group: item.group };
+    })
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return { groups: groupBy(scored), commandMode, flatScored: scored };
+}
+
+function groupBy(list) {
+  const order = ['recent', 'page', 'data', 'command'];
+  const map = {};
+  for (const r of list) {
+    if (!map[r.group]) map[r.group] = [];
+    map[r.group].push(r);
+  }
+  return order.filter(g => map[g] && map[g].length).map(g => ({ group: g, items: map[g] }));
+}
+
+function render() {
+  const { groups, commandMode } = computeResults();
+  const resultsEl = document.getElementById('results');
+
+  flatResults = [];
+  groups.forEach(g => g.items.forEach(r => flatResults.push(r)));
+
+  if (state.selectedIndex >= flatResults.length) state.selectedIndex = Math.max(0, flatResults.length - 1);
+
+  if (flatResults.length === 0) {
+    resultsEl.innerHTML = `
+      <div class="empty-state">
+        <div class="big">🔍</div>
+        没有找到匹配的结果<br>
+        <span style="opacity:.7;">试试拼音首字母、英文别名，或换个关键词</span>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  let runningIndex = 0;
+  for (const g of groups) {
+    html += `<div class="group-label">${GROUP_LABELS[g.group]}</div>`;
+    for (const r of g.items) {
+      const idx = runningIndex++;
+      const isSelected = idx === state.selectedIndex;
+      const item = r.item;
+      const titleHtml = state.query.trim().replace('>', '') ? highlightMatch(item.title, state.query.trim().replace(/^>\s*/, '')) : escapeHtml(item.title);
+      const lockHtml = item.locked ? `<span class="lock-badge">🔒 受限</span>` : '';
+      const scoreHtml = (state.showScores && r.score) ? `<span class="item-score">${r.score.toFixed(2)}${r.alias ? ' · alias:' + escapeHtml(r.alias) : ''}</span>` : '';
+      html += `
+        <div class="item ${isSelected ? 'selected' : ''} ${item.locked ? 'locked' : ''}" data-idx="${idx}" data-id="${item.id}">
+          <div class="item-icon">${item.icon}</div>
+          <div class="item-body">
+            <div class="item-title">${titleHtml}${lockHtml}</div>
+            <div class="item-sub">${escapeHtml(item.sub)}</div>
+          </div>
+          <div class="item-right">
+            ${scoreHtml}
+            <span class="kbd-hint">${item.isCommand ? '执行 ↵' : '跳转 ↵'}</span>
+          </div>
+        </div>`;
+    }
+  }
+  resultsEl.innerHTML = html;
+
+  resultsEl.querySelectorAll('.item').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      state.selectedIndex = parseInt(el.dataset.idx, 10);
+      updateSelectionClasses();
+    });
+    el.addEventListener('click', () => activateItem(parseInt(el.dataset.idx, 10)));
+  });
+
+  scrollSelectedIntoView();
+}
+
+function updateSelectionClasses() {
+  document.querySelectorAll('.item').forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.idx, 10) === state.selectedIndex);
+  });
+  scrollSelectedIntoView();
+}
+
+function scrollSelectedIntoView() {
+  const el = document.querySelector('.item.selected');
+  if (el) el.scrollIntoView({ block: 'nearest' });
+}
+
+function activateItem(idx) {
+  const r = flatResults[idx];
+  if (!r) return;
+  const item = r.item;
+  if (item.locked && state.role !== 'admin') {
+    showToast('🔒 没有权限访问此内容');
+    return;
+  }
+  // personalize: bump this item to front of recent
+  state.recentIds = [item.id, ...state.recentIds.filter(id => id !== item.id)].slice(0, 4);
+
+  if (item.isCommand) {
+    if (item.danger) {
+      showToast(`⚠ 已模拟执行「${item.title}」（危险操作会在真实产品中二次确认）`);
+    } else {
+      showToast(`✓ 已执行「${item.title}」`);
+    }
+  } else if (item.group === 'page') {
+    showToast(`→ 正在跳转到「${item.title}」`);
+  } else {
+    showToast(`↗ 正在打开「${item.title}」详情`);
+  }
+  closePalette();
+}
+
+function showToast(text) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = text;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ---------------------------------------------------------------------------
+// Open / close palette
+// ---------------------------------------------------------------------------
+const overlay = document.getElementById('overlay');
+const input = document.getElementById('searchInput');
+
+function openPalette() {
+  overlay.classList.add('show');
+  state.query = '';
+  state.selectedIndex = 0;
+  input.value = '';
+  render();
+  setTimeout(() => input.focus(), 30);
+}
+function closePalette() {
+  overlay.classList.remove('show');
+  document.getElementById('openBtn').focus();
+}
+
+document.getElementById('openBtn').addEventListener('click', openPalette);
+overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) closePalette(); });
+
+document.addEventListener('keydown', (e) => {
+  const meta = e.metaKey || e.ctrlKey;
+  if (meta && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    overlay.classList.contains('show') ? closePalette() : openPalette();
+    return;
+  }
+  if (!overlay.classList.contains('show')) return;
+
+  if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    state.selectedIndex = (state.selectedIndex + 1) % Math.max(flatResults.length, 1);
+    updateSelectionClasses();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    state.selectedIndex = (state.selectedIndex - 1 + flatResults.length) % Math.max(flatResults.length, 1);
+    updateSelectionClasses();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    activateItem(state.selectedIndex);
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    const order = ['all', 'page', 'data', 'command'];
+    const i = order.indexOf(state.activeFilter);
+    state.activeFilter = order[(i + 1) % order.length];
+    state.selectedIndex = 0;
+    syncChips();
+    render();
+  }
+});
+
+input.addEventListener('input', () => {
+  state.query = input.value;
+  state.selectedIndex = 0;
+  render();
+});
+
+document.getElementById('chips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  state.activeFilter = chip.dataset.filter;
+  state.selectedIndex = 0;
+  syncChips();
+  render();
+});
+function syncChips() {
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === state.activeFilter));
+}
+
+document.getElementById('scoreToggle').addEventListener('change', (e) => {
+  state.showScores = e.target.checked;
+  render();
+});
+
+document.querySelectorAll('.role-switch button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.role = btn.dataset.role;
+    document.querySelectorAll('.role-switch button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('roleFooter').textContent = 'role: ' + state.role;
+    render();
+  });
+});
+
+// number key 1-4 also switches chip filter while palette open (extra affordance)
+document.addEventListener('keydown', (e) => {
+  if (!overlay.classList.contains('show')) return;
+  if (document.activeElement !== input) return;
+  if (['1','2','3','4'].includes(e.key) && input.value === '') {
+    const map = { '1':'all','2':'page','3':'data','4':'command' };
+    // only trigger via chip click normally; number shortcut left as future affordance
+  }
+});
+
+// Detect platform to show correct modifier key hint
+if (!/Mac|iPhone|iPad/.test(navigator.platform)) {
+  document.getElementById('kbdMac').textContent = 'Ctrl K';
+}
+
+render();
+</script>
+</body>
+</html>
